@@ -1,0 +1,4 @@
+{
+  "BindingRedirectFixer.ScanCommand.DisplayName": "Fix Binding Redirects",
+  "BindingRedirectFixer.ScanCommand.TooltipText": "Scan all projects for stale or missing assembly binding redirects"
+}

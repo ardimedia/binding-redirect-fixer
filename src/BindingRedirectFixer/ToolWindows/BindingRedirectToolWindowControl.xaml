@@ -1,0 +1,695 @@
+<DataTemplate xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+              xmlns:platformui="clr-namespace:Microsoft.VisualStudio.PlatformUI;assembly=Microsoft.VisualStudio.Shell.15.0">
+
+    <Grid TextElement.Foreground="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}">
+        <Grid.Resources>
+            <!-- ======== Themed Button (default — for Analyse, Fix Shown, etc.) ======== -->
+            <Style TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Setter Property="Background" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarMouseOverBackgroundBeginBrushKey}}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarMouseDownBackgroundBeginBrushKey}}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======== Chromeless Button (tabs, row items) ======== -->
+            <Style x:Key="ChromelessButton" TargetType="Button">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}"
+                                                  VerticalAlignment="{TemplateBinding VerticalContentAlignment}" />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarMouseOverBackgroundBeginBrushKey}}" />
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarMouseDownBackgroundBeginBrushKey}}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======== Themed ComboBox (full template to control popup background) ======== -->
+            <Style TargetType="ComboBox">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Setter Property="Background" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBox">
+                            <Grid>
+                                <ToggleButton x:Name="ToggleBtn"
+                                              IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                              Focusable="False" ClickMode="Press"
+                                              Background="{TemplateBinding Background}"
+                                              BorderBrush="{TemplateBinding BorderBrush}"
+                                              BorderThickness="{TemplateBinding BorderThickness}">
+                                    <ToggleButton.Template>
+                                        <ControlTemplate TargetType="ToggleButton">
+                                            <Border x:Name="Bd"
+                                                    Background="{TemplateBinding Background}"
+                                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                                    SnapsToDevicePixels="True">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="18" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <Path Grid.Column="1" Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}"
+                                                          StrokeThickness="1.2" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                                </Grid>
+                                            </Border>
+                                            <ControlTemplate.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter TargetName="Bd" Property="Background"
+                                                            Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarMouseOverBackgroundBeginBrushKey}}" />
+                                                </Trigger>
+                                            </ControlTemplate.Triggers>
+                                        </ControlTemplate>
+                                    </ToggleButton.Template>
+                                </ToggleButton>
+                                <ContentPresenter Content="{TemplateBinding SelectionBoxItem}"
+                                                  ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                  Margin="6,3,24,3"
+                                                  VerticalAlignment="Center"
+                                                  HorizontalAlignment="Left"
+                                                  IsHitTestVisible="False" />
+                                <Popup x:Name="PART_Popup"
+                                       IsOpen="{TemplateBinding IsDropDownOpen}"
+                                       Placement="Bottom"
+                                       AllowsTransparency="True"
+                                       Focusable="False"
+                                       PopupAnimation="Slide">
+                                    <Border MinWidth="{TemplateBinding ActualWidth}"
+                                            MaxHeight="{TemplateBinding MaxDropDownHeight}"
+                                            Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
+                                            BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                                            BorderThickness="1"
+                                            SnapsToDevicePixels="True">
+                                        <ScrollViewer VerticalScrollBarVisibility="Auto">
+                                            <ItemsPresenter />
+                                        </ScrollViewer>
+                                    </Border>
+                                </Popup>
+                            </Grid>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======== Themed ComboBox dropdown items ======== -->
+            <Style TargetType="ComboBoxItem">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Setter Property="Background" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ComboBoxItem">
+                            <Border x:Name="Bd"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}"
+                                    SnapsToDevicePixels="True">
+                                <ContentPresenter />
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Bd" Property="Background"
+                                            Value="{DynamicResource {x:Static platformui:EnvironmentColors.CommandBarMouseOverBackgroundBeginBrushKey}}" />
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- ======== Themed TextBox ======== -->
+            <Style TargetType="TextBox">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Setter Property="Background" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}" />
+                <Setter Property="BorderBrush" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}" />
+                <Setter Property="CaretBrush" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            </Style>
+
+            <!-- ======== Selectable read-only text (looks like TextBlock but supports copy) ======== -->
+            <Style x:Key="SelectableText" TargetType="TextBox">
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="IsReadOnly" Value="True" />
+                <Setter Property="IsTabStop" Value="False" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="CaretBrush" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
+            </Style>
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Tab Bar -->
+        <Border Grid.Row="0" BorderThickness="0,0,0,1" BorderBrush="Gray" Margin="0,0,0,0" Padding="0" Opacity="0.4" />
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="8,4,8,0">
+            <Border BorderThickness="{Binding IssuesTabUnderline}"
+                    BorderBrush="#D4A030"
+                    Padding="0,0,0,4"
+                    Margin="0,0,6,0">
+                <Button Content="Binding Redirect Issues"
+                        Command="{Binding SwitchToIssuesTabCommand}"
+                        Padding="14,6"
+                        FontWeight="{Binding IssuesTabFontWeight}"
+                        Opacity="{Binding IssuesTabOpacity}"
+                        Style="{StaticResource ChromelessButton}" />
+            </Border>
+            <Border BorderThickness="{Binding LearnTabUnderline}"
+                    BorderBrush="#D4A030"
+                    Padding="0,0,0,4"
+                    Margin="0,0,6,0">
+                <Button Content="Learn"
+                        Command="{Binding SwitchToLearnTabCommand}"
+                        Padding="14,6"
+                        FontWeight="{Binding LearnTabFontWeight}"
+                        Opacity="{Binding LearnTabOpacity}"
+                        Style="{StaticResource ChromelessButton}" />
+            </Border>
+            <Border BorderThickness="{Binding FeedbackTabUnderline}"
+                    BorderBrush="#D4A030"
+                    Padding="0,0,0,4">
+                <Button Content="Feedback"
+                        Command="{Binding SwitchToFeedbackTabCommand}"
+                        Padding="14,6"
+                        FontWeight="{Binding FeedbackTabFontWeight}"
+                        Opacity="{Binding FeedbackTabOpacity}"
+                        Style="{StaticResource ChromelessButton}" />
+            </Border>
+        </StackPanel>
+
+        <!-- ==================== ISSUES TAB ==================== -->
+        <Grid Grid.Row="1"
+              Visibility="{Binding IssuesTabVisibility}">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Toolbar (wraps to next line when too wide) -->
+            <WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="8,4,8,0">
+                <TextBlock Text="Project:" VerticalAlignment="Center" Margin="0,0,6,4" />
+                <ComboBox ItemsSource="{Binding Projects}"
+                          SelectedItem="{Binding SelectedProject}"
+                          MinWidth="180"
+                          Margin="0,0,12,4" />
+                <TextBlock Text="Assembly:" VerticalAlignment="Center" Margin="0,0,6,4" />
+                <Grid MinWidth="140" Margin="0,0,12,4">
+                    <TextBox Text="{Binding AssemblyFilter}"
+                             Padding="4,3,20,3">
+                        <TextBox.InputBindings>
+                            <KeyBinding Key="Return" Command="{Binding ApplyAssemblyFilterCommand}" />
+                        </TextBox.InputBindings>
+                    </TextBox>
+                    <Button Command="{Binding ClearAssemblyFilterCommand}"
+                            Visibility="{Binding AssemblyFilterClearVisibility}"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Center"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Padding="4,0"
+                            Margin="0,0,2,0"
+                            Cursor="Hand"
+                            ToolTipService.ToolTip="Clear filter">
+                        <TextBlock Text="&#x2715;" FontSize="10" Opacity="0.6" />
+                    </Button>
+                </Grid>
+                <TextBlock Text="Status:" VerticalAlignment="Center" Margin="0,0,6,4" />
+                <ComboBox ItemsSource="{Binding Statuses}"
+                          SelectedItem="{Binding SelectedStatus}"
+                          MinWidth="110"
+                          Margin="0,0,12,4" />
+                <Button Content="Analyse" Command="{Binding AnalyseCommand}" Padding="10,3" Margin="0,0,4,4" />
+                <Button Content="Fix Shown Items" Command="{Binding FixAllCommand}" Padding="10,3" Margin="0,0,8,4" />
+                <CheckBox IsChecked="{Binding CreateBackup}"
+                          VerticalAlignment="Center"
+                          Margin="0,0,0,4"
+                          ToolTipService.ToolTip="Create a timestamped backup of config files before applying fixes">
+                    <TextBlock Text="Backup" VerticalAlignment="Center" />
+                </CheckBox>
+            </WrapPanel>
+
+            <!-- Status Bar -->
+            <Border Grid.Row="1"
+                    BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Margin="8,0,8,6"
+                    Padding="10,5"
+                    Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTabSelectedTabBrushKey}}">
+                <TextBlock Text="{Binding StatusText}" FontSize="11" Opacity="0.85" />
+            </Border>
+
+            <!-- Dismissible Info Bar -->
+            <Border Grid.Row="2"
+                    BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                    BorderThickness="1"
+                    CornerRadius="3"
+                    Margin="8,0,8,6"
+                    Padding="10,6"
+                    Opacity="0.9"
+                    Background="Transparent"
+                    Visibility="{Binding InfoBarVisibility}">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0"
+                               Text="STALE = binding redirect version is outdated and needs updating. MISSING = a binding redirect should be added to prevent version conflicts. Select a row for details."
+                               TextWrapping="Wrap" FontSize="11" Opacity="0.85" />
+                    <Button Grid.Column="1" Content="X"
+                            Command="{Binding DismissInfoBarCommand}"
+                            Padding="6,1" Margin="10,0,0,0"
+                            VerticalAlignment="Top" FontSize="10" />
+                </Grid>
+            </Border>
+
+            <!-- Column Headers -->
+            <Border Grid.Row="3" Margin="8,0,8,0" Padding="6,5" Opacity="0.7" Background="Transparent">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="120" />
+                        <ColumnDefinition Width="180" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="100" />
+                        <ColumnDefinition Width="80" />
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Project" FontWeight="Bold" FontSize="11" />
+                    <TextBlock Grid.Column="1" Text="Assembly" FontWeight="Bold" FontSize="11" />
+                    <TextBlock Grid.Column="2" Text="Resolved" FontWeight="Bold" FontSize="11"
+                               ToolTip="Assembly Version from NuGet Cache — Read from the actual DLL that NuGet's dependency resolver selected. Combined with bin/ DLL to determine the effective redirect target (highest wins)." />
+                    <TextBlock Grid.Column="3" Text="Requested" FontWeight="Bold" FontSize="11"
+                               ToolTip="Package Version — Declared in PackageReference or packages.config. May differ from resolved due to version ranges or transitive dependencies. Informational only." />
+                    <TextBlock Grid.Column="4" Text="bin/ DLL" FontWeight="Bold" FontSize="11"
+                               ToolTip="Physical DLL on Disk — Can be stale after incomplete builds or failed cleans. A mismatch signals a build problem, not a redirect problem." />
+                    <TextBlock Grid.Column="5" Text="Config" FontWeight="Bold" FontSize="11"
+                               ToolTip="Current Binding Redirect — What the runtime uses now. Should match MAX(Resolved, bin/ DLL) for correct operation." />
+                    <TextBlock Grid.Column="6" Text="Status" FontWeight="Bold" FontSize="11" />
+                </Grid>
+            </Border>
+
+            <!-- Issues List + Detail Panel -->
+            <Grid Grid.Row="4" Margin="8,0,8,4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <ListBox Grid.Row="0"
+                         ItemsSource="{Binding Issues}"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         Background="Transparent"
+                         BorderThickness="0">
+                    <ListBox.Resources>
+                        <!-- Remove default ListBoxItem selection highlight -->
+                        <Style TargetType="ListBoxItem">
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                            <Setter Property="Padding" Value="0" />
+                            <Setter Property="Margin" Value="0" />
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="ListBoxItem">
+                                        <ContentPresenter />
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </ListBox.Resources>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding SelectCommand}"
+                                    HorizontalContentAlignment="Stretch"
+                                    Padding="0" Margin="0"
+                                    BorderThickness="0,0,0,1" BorderBrush="Gray"
+                                    Style="{StaticResource ChromelessButton}">
+                                <Grid Margin="6,4">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="120" />
+                                        <ColumnDefinition Width="180" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="100" />
+                                        <ColumnDefinition Width="80" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="{Binding ProjectName}" FontSize="11" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="2" Text="{Binding ResolvedAssemblyVersion}" FontSize="11" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="3" Text="{Binding RequestedVersion}" FontSize="11" Opacity="0.6" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="4" Text="{Binding PhysicalVersion}" FontSize="11" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="5" Text="{Binding CurrentRedirectVersion}" FontSize="11" VerticalAlignment="Center" />
+                                    <TextBlock Grid.Column="6" Text="{Binding StatusText}" FontSize="11" VerticalAlignment="Center" />
+                                </Grid>
+                            </Button>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Detail Panel -->
+                <Border Grid.Row="1"
+                        Margin="0,6,0,0" Padding="14,10"
+                        BorderThickness="1" CornerRadius="3"
+                        BorderBrush="Gray"
+                        Background="Transparent"
+                        Opacity="0.95"
+                        Visibility="{Binding DetailPanelVisibility}">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                                <TextBox Text="{Binding SelectedIssue.Name}" FontWeight="Bold" FontSize="14"
+                                         Style="{StaticResource SelectableText}" />
+                                <TextBlock Text=" — " FontSize="14" Opacity="0.5" />
+                                <TextBox Text="{Binding SelectedIssue.StatusDisplay}" FontWeight="Bold" FontSize="14"
+                                         Style="{StaticResource SelectableText}" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="Copy to Feedback"
+                                    Command="{Binding CopyToFeedbackCommand}"
+                                    Padding="10,3" FontSize="11"
+                                    VerticalAlignment="Center"
+                                    ToolTipService.ToolTip="Copy assembly details to the Feedback tab for reporting an issue" />
+                        </Grid>
+                        <TextBox Text="{Binding SelectedIssue.DiagnosticMessage}" TextWrapping="Wrap"
+                                 Margin="0,0,0,10" FontSize="12" Opacity="0.85"
+                                 Style="{StaticResource SelectableText}" />
+
+                        <!-- Config file path -->
+                        <TextBox Text="{Binding ConfigFilePath}" FontSize="10" FontFamily="Consolas"
+                                 Opacity="0.6" Margin="0,0,0,6"
+                                 Style="{StaticResource SelectableText}" />
+
+                        <!-- Version flow + Config entry side by side -->
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="{Binding LeftPanelWidth}" MinWidth="120" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="{Binding RightPanelWidth}" MinWidth="120" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Version flow (left) -->
+                            <Border Grid.Column="0" Margin="0,0,0,0" Padding="10,8" CornerRadius="3"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                                    Background="Transparent">
+                                <StackPanel>
+                                    <TextBlock Text="Version flow:" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,6" />
+                                    <StackPanel Orientation="Horizontal" Margin="10,0,0,3">
+                                        <TextBlock Text="NuGet resolved: " FontSize="11" FontFamily="Consolas" Width="140" />
+                                        <TextBox Text="{Binding SelectedIssue.ResolvedAssemblyVersion}" FontSize="11" FontFamily="Consolas"
+                                                 Style="{StaticResource SelectableText}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="10,0,0,3">
+                                        <TextBlock Text="bin/ DLL:       " FontSize="11" FontFamily="Consolas" Width="140" />
+                                        <TextBox Text="{Binding SelectedIssue.PhysicalVersion}" FontSize="11" FontFamily="Consolas"
+                                                 Style="{StaticResource SelectableText}" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Margin="10,0,0,0">
+                                        <TextBlock Text="Config:         " FontSize="11" FontFamily="Consolas" Width="140" />
+                                        <TextBox Text="{Binding SelectedIssue.CurrentRedirectVersion}" FontSize="11" FontFamily="Consolas"
+                                                 Style="{StaticResource SelectableText}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Split ratio controls -->
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="2,0">
+                                <Button Command="{Binding SplitLeftCommand}"
+                                        Content="&#x25C0;" FontSize="8" Padding="2,4"
+                                        Background="Transparent" BorderThickness="0"
+                                        ToolTipService.ToolTip="More space for config" />
+                                <Button Command="{Binding SplitRightCommand}"
+                                        Content="&#x25B6;" FontSize="8" Padding="2,4"
+                                        Background="Transparent" BorderThickness="0"
+                                        ToolTipService.ToolTip="More space for versions" />
+                            </StackPanel>
+
+                            <!-- Config snippet + Change log (right) -->
+                            <Border Grid.Column="2" Margin="0,0,0,0" Padding="10,8" CornerRadius="3"
+                                    BorderThickness="1"
+                                    BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                                    Background="Transparent">
+                                <StackPanel>
+                                    <TextBlock Text="Config entry:" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,4" />
+                                    <TextBox Text="{Binding ConfigSnippet}" FontSize="11" FontFamily="Consolas"
+                                             TextWrapping="Wrap" Style="{StaticResource SelectableText}" />
+                                    <StackPanel Visibility="{Binding FixChangeLogVisibility}" Margin="0,8,0,0">
+                                        <TextBlock Text="Applied change:" FontWeight="SemiBold" FontSize="11" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding FixChangeLog}" FontSize="11" FontFamily="Consolas"
+                                                 TextWrapping="Wrap" Style="{StaticResource SelectableText}" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <Button Content="{Binding SelectedIssue.ActionLabel}"
+                                Command="{Binding FixSelectedCommand}"
+                                Padding="18,5"
+                                Visibility="{Binding ActionButtonVisibility}" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+        </Grid>
+
+        <!-- ==================== LEARN TAB ==================== -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Background="Transparent"
+                      Visibility="{Binding LearnTabVisibility}">
+            <StackPanel Margin="12,8,12,16">
+
+                <!-- Section 1: What are Binding Redirects? -->
+                <TextBlock Text="What are Binding Redirects?"
+                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,10" Opacity="0.85"
+                           Text="When .NET Framework loads an assembly, it looks for an exact version match. If PackageA depends on Newtonsoft.Json 12.0.0.0 and PackageB depends on 13.0.0.0, the runtime cannot satisfy both and fails with:" />
+
+                <Border BorderBrush="#E05050" BorderThickness="0,0,0,2" Padding="12,8" CornerRadius="3" Margin="0,0,0,10" Background="Transparent">
+                    <TextBlock Text="Could not load file or assembly ... manifest definition does not match the assembly reference"
+                               FontFamily="Consolas" FontSize="11" TextWrapping="Wrap" Foreground="#E05050" />
+                </Border>
+
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,10" Opacity="0.85"
+                           Text="A binding redirect tells .NET: &quot;whenever any code asks for versions 0.0.0.0 through 13.0.0.0, give them 13.0.0.0 instead.&quot;" />
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,6" Opacity="0.85"
+                           Text="This is configured in web.config or app.config:" />
+
+                <Border Padding="12,10" CornerRadius="3" Margin="0,0,0,24" BorderThickness="1" BorderBrush="Gray" Opacity="0.85" Background="Transparent">
+                    <TextBlock FontFamily="Consolas" FontSize="11"
+                               Text="&lt;dependentAssembly&gt;&#x0a;  &lt;assemblyIdentity name=&quot;Newtonsoft.Json&quot;&#x0a;    publicKeyToken=&quot;30ad4fe6b2a6aeed&quot; culture=&quot;neutral&quot; /&gt;&#x0a;  &lt;bindingRedirect oldVersion=&quot;0.0.0.0-13.0.0.0&quot;&#x0a;    newVersion=&quot;13.0.0.0&quot; /&gt;&#x0a;&lt;/dependentAssembly&gt;" />
+                </Border>
+
+                <!-- Separator -->
+                <Border Height="1" Opacity="0.15" Margin="0,0,0,24" Background="Gray" />
+
+                <!-- Section 2: Package Version vs Assembly Version -->
+                <TextBlock Text="Package Version vs Assembly Version"
+                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,10" Opacity="0.85"
+                           Text="NuGet packages have a package version (e.g., Newtonsoft.Json 13.0.3). But the DLL inside the package has a separate assembly version (e.g., 13.0.0.0). Binding redirects use ASSEMBLY versions, not package versions." />
+
+                <Border Padding="12,10" CornerRadius="3" Margin="0,0,0,10" BorderThickness="1" BorderBrush="Gray" Opacity="0.85" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock FontFamily="Consolas" FontSize="11" Text="Package version:  13.0.3   (changes with every release)" />
+                        <TextBlock FontFamily="Consolas" FontSize="11" Text="Assembly version: 13.0.0.0 (often kept stable across minor releases)" Margin="0,3,0,0" />
+                    </StackPanel>
+                </Border>
+
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,24" Opacity="0.85"
+                           Text="This tool resolves the actual assembly version by reading the DLL from the NuGet cache, not by using the package version number." />
+
+                <!-- Separator -->
+                <Border Height="1" Opacity="0.15" Margin="0,0,0,24" Background="Gray" />
+
+                <!-- Section 3: Common Scenarios -->
+                <TextBlock Text="Common Scenarios"
+                           FontSize="18" FontWeight="Bold" Margin="0,0,0,12" />
+
+                <!-- STALE Card -->
+                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="STALE  —  Redirect Version Mismatch" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The binding redirect does not match the effective target version (= highest of NuGet resolved and bin/ DLL). This happens after a NuGet update, a rebuild with a newer DLL, or when bin/ contains a version higher than what NuGet resolved." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Update Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- MISSING Card -->
+                <Border BorderBrush="#E05050" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="MISSING  —  New Transitive Dependency" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="A package you installed depends on another package that is also used by a different package at a different version. There is no binding redirect to resolve the conflict." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Add Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- MISMATCH Card -->
+                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="MISMATCH  —  Redirect Targets Missing Version" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The binding redirect targets a version that is not available on disk. This happens with .NET Framework assemblies (e.g. System.ServiceModel.*) where a cross-platform NuGet package provides assembly version 10.0.0.0 but the actual DLL in bin/ is an older framework version (e.g. 8.1.2.0). The redirect tells the runtime to load 10.0.0.0 which doesn't exist." />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The fix is to remove the redirect entry entirely. Without a redirect, the runtime simply loads whatever DLL is in bin/ — which is the correct framework version." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Remove Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- DUPLICATE Card -->
+                <Border BorderBrush="#E05050" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="DUPLICATE  —  Multiple Redirect Entries" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The config file contains more than one binding redirect entry for the same assembly. This can happen after merging branches or manual edits. Only one entry per assembly should exist." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Remove Duplicate] — keeps one entry with the correct version" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Version Mismatch Info Card -->
+                <Border BorderBrush="#5090E0" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,24" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="OK (informational)  —  bin/ Version Differs" FontSize="13" FontWeight="Bold" Foreground="#5090E0" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The DLL in bin/ differs from the NuGet-resolved version. This is normal and does not require action. bin/ newer = transitive dependency brought a newer version. bin/ older = .NET Framework assembly from the runtime/GAC (e.g. System.ServiceModel.*). Without a binding redirect, the runtime simply loads whatever DLL is in bin/." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="No action needed — shown as OK with an informational note" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Separator -->
+                <Border Height="1" Opacity="0.15" Margin="0,0,0,24" Background="Gray" />
+
+                <!-- Section 4: How This Tool Resolves Versions -->
+                <TextBlock Text="How This Tool Resolves Versions"
+                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,10" Opacity="0.85"
+                           Text="The tool checks four version sources. The binding redirect target is the HIGHEST of NuGet resolved and bin/ DLL, because the redirect must cover all referenced versions and the runtime must find a matching DLL." />
+
+                <Border Padding="14,12" CornerRadius="3" Margin="0,0,0,12" BorderThickness="1" BorderBrush="Gray" Opacity="0.85" Background="Transparent">
+                    <TextBlock FontFamily="Consolas" FontSize="11"
+                               Text="1. NuGet Resolved DLL      (What NuGet selected)&#x0a;   Assembly version read from actual DLL in NuGet cache&#x0a;           |&#x0a;           v  cross-check&#x0a;2. Package Reference       (What was requested)&#x0a;   Version from .csproj or packages.config&#x0a;           |&#x0a;           v  verify on disk&#x0a;3. bin/ DLL                (What is deployed)&#x0a;   Assembly version from physical DLL&#x0a;           |&#x0a;           v  Effective Target = MAX(1, 3)&#x0a;4. Config Redirect         (What runtime uses)&#x0a;   Must match the effective target version" />
+                </Border>
+
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,24" Opacity="0.85"
+                           Text="The redirect newVersion must match the DLL the runtime will actually load. If bin/ has a higher version than NuGet resolved, the redirect targets the bin/ version. After a clean rebuild, both should align." />
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ==================== FEEDBACK TAB ==================== -->
+        <ScrollViewer Grid.Row="1"
+                      VerticalScrollBarVisibility="Auto"
+                      HorizontalScrollBarVisibility="Disabled"
+                      Background="Transparent"
+                      Visibility="{Binding FeedbackTabVisibility}">
+            <StackPanel Margin="12,8,12,16">
+
+                <TextBlock Text="Feedback &amp; Issues"
+                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
+                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,16" Opacity="0.85"
+                           Text="Found a bug? Have a suggestion or feature request? We'd love to hear from you." />
+
+                <Border BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,16" Padding="14,12" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="Report an Issue or Suggestion" FontSize="14" FontWeight="Bold" Foreground="#5090E0" Margin="0,0,0,8" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,10" Opacity="0.85"
+                                   Text="Open an issue on GitHub to report bugs, request features, or ask questions about the extension." />
+                        <Button Command="{Binding OpenGitHubIssuesCommand}"
+                                Background="Transparent" BorderThickness="0"
+                                Padding="0" Margin="0" Cursor="Hand"
+                                HorizontalAlignment="Left">
+                            <TextBlock Text="https://github.com/ardimedia/binding-redirect-fixer/issues"
+                                       FontSize="12" FontFamily="Consolas"
+                                       Foreground="#5090E0"
+                                       TextDecorations="Underline" />
+                        </Button>
+                    </StackPanel>
+                </Border>
+
+                <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,16" Opacity="0.6"
+                           Text="Click the link above to open GitHub Issues in your browser." />
+
+                <!-- Pre-filled issue details from Copy to Feedback button -->
+                <Border Visibility="{Binding FeedbackTextVisibility}"
+                        BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                        BorderThickness="1" CornerRadius="4" Margin="0,0,0,8" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="Issue Details (select all, copy, and paste into a new issue):"
+                                   FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <TextBox Text="{Binding FeedbackText}"
+                                 FontSize="11" FontFamily="Consolas"
+                                 TextWrapping="Wrap"
+                                 AcceptsReturn="True"
+                                 IsReadOnly="True"
+                                 VerticalScrollBarVisibility="Auto"
+                                 MaxHeight="300"
+                                 Padding="8,6"
+                                 Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
+                                 BorderThickness="0" />
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+    </Grid>
+</DataTemplate>
