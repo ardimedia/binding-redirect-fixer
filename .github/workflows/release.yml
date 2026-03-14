@@ -1,23 +1,15 @@
-name: Build & Publish VSIX
+name: Release & Publish
 
 on:
   push:
-    branches: [main]
-    paths:
-      - 'src/**'
     tags:
       - 'v*'
 
-  pull_request:
-    branches: [main]
-    paths:
-      - 'src/**'
-
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
 
     steps:
@@ -43,13 +35,6 @@ jobs:
           echo "path=$VSIX_PATH" >> "$GITHUB_OUTPUT"
           echo "Found VSIX: $VSIX_PATH"
 
-      - name: Upload VSIX artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: BindingRedirectFixer-vsix
-          path: ${{ steps.vsix.outputs.path }}
-          if-no-files-found: error
-
       # --- Signing placeholder (Azure Trusted Signing) ---
       # Uncomment once Azure Trusted Signing is configured (target: May 2026)
       # See: D:\CODE\.claude\code-signing.md
@@ -68,28 +53,11 @@ jobs:
       #     file-digest: SHA256
       #     timestamp-rfc3161: http://timestamp.acs.microsoft.com
 
-  publish:
-    needs: build
-    runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/v')
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Download VSIX artifact
-        uses: actions/download-artifact@v4
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
         with:
-          name: BindingRedirectFixer-vsix
-          path: artifacts
-
-      - name: Find VSIX
-        id: vsix
-        shell: bash
-        run: |
-          VSIX_PATH=$(find artifacts -name "*.vsix" | head -1)
-          echo "path=$VSIX_PATH" >> "$GITHUB_OUTPUT"
-          echo "Will publish: $VSIX_PATH"
+          files: ${{ steps.vsix.outputs.path }}
+          generate_release_notes: true
 
       - name: Publish to Marketplace
         uses: cezarypiatek/VsixPublisherAction@1.1
