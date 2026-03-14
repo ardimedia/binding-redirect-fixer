@@ -537,8 +537,19 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         StatusText = "Preparing analysis...";
         await Task.Delay(500, cancellationToken).ConfigureAwait(false);
 
-        await ExecuteAnalyseAsync(null, cancellationToken).ConfigureAwait(false);
-        _lastBinFolderWriteTime = GetBinFoldersWriteTime();
+        // Only run analysis if a solution is already loaded;
+        // otherwise the monitor will detect when one opens and trigger it
+        var fingerprint = await GetSolutionFingerprintAsync(cancellationToken).ConfigureAwait(false);
+        if (!string.IsNullOrEmpty(fingerprint))
+        {
+            await ExecuteAnalyseAsync(null, cancellationToken).ConfigureAwait(false);
+            _lastBinFolderWriteTime = GetBinFoldersWriteTime();
+        }
+        else
+        {
+            StatusText = "Waiting for a solution to be opened...";
+        }
+
         StartSolutionMonitor();
     }
 
@@ -552,21 +563,25 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         _filterDebounceCts?.Cancel();
 
         Issues.Clear();
-        Projects.Clear();
-        Projects.Add("All Projects");
         _allResults.Clear();
         _projectDirectories.Clear();
         _lastSolutionFingerprint = string.Empty;
         _lastBinFolderWriteTime = DateTime.MinValue;
 
+        // Keep "All Projects" in the list to avoid ComboBox losing selection
+        while (Projects.Count > 1)
+        {
+            Projects.RemoveAt(Projects.Count - 1);
+        }
+
         SelectedIssue = null;
         FixChangeLog = string.Empty;
 
         _selectedProject = "All Projects";
-        RaiseNotifyPropertyChangedEvent(nameof(SelectedProject));
         _selectedStatus = "All";
-        RaiseNotifyPropertyChangedEvent(nameof(SelectedStatus));
         _assemblyFilter = string.Empty;
+        RaiseNotifyPropertyChangedEvent(nameof(SelectedProject));
+        RaiseNotifyPropertyChangedEvent(nameof(SelectedStatus));
         RaiseNotifyPropertyChangedEvent(nameof(AssemblyFilter));
         RaiseNotifyPropertyChangedEvent(nameof(AssemblyFilterClearVisibility));
 
@@ -765,18 +780,22 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         try
         {
             Issues.Clear();
-            Projects.Clear();
-            Projects.Add("All Projects");
             _allResults.Clear();
             _projectDirectories.Clear();
             SelectedIssue = null;
 
+            // Keep "All Projects" in the list to avoid ComboBox losing selection
+            while (Projects.Count > 1)
+            {
+                Projects.RemoveAt(Projects.Count - 1);
+            }
+
             // Reset filters to defaults (set backing fields to avoid triggering ApplyFilters)
             _selectedProject = "All Projects";
-            RaiseNotifyPropertyChangedEvent(nameof(SelectedProject));
             _selectedStatus = "All";
-            RaiseNotifyPropertyChangedEvent(nameof(SelectedStatus));
             _assemblyFilter = string.Empty;
+            RaiseNotifyPropertyChangedEvent(nameof(SelectedProject));
+            RaiseNotifyPropertyChangedEvent(nameof(SelectedStatus));
             RaiseNotifyPropertyChangedEvent(nameof(AssemblyFilter));
 
             // Query all projects from the solution via VS workspace APIs

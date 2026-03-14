@@ -1,0 +1,110 @@
+name: Build & Publish VSIX
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/**'
+    tags:
+      - 'v*'
+
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore dependencies
+        run: dotnet restore src/bindingredirectfixer.sln
+
+      - name: Build
+        run: dotnet build src/bindingredirectfixer.sln -c Release --no-restore
+
+      - name: Find VSIX
+        id: vsix
+        shell: bash
+        run: |
+          VSIX_PATH=$(find src -name "*.vsix" -path "*/Release/*" | head -1)
+          echo "path=$VSIX_PATH" >> "$GITHUB_OUTPUT"
+          echo "Found VSIX: $VSIX_PATH"
+
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BindingRedirectFixer-vsix
+          path: ${{ steps.vsix.outputs.path }}
+          if-no-files-found: error
+
+      # --- Signing placeholder (Azure Trusted Signing) ---
+      # Uncomment once Azure Trusted Signing is configured (target: May 2026)
+      # See: D:\CODE\.claude\code-signing.md
+      #
+      # - name: Sign VSIX
+      #   uses: azure/trusted-signing-action@v0.5.0
+      #   with:
+      #     azure-tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     azure-client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     azure-client-secret: ${{ secrets.AZURE_CLIENT_SECRET }}
+      #     endpoint: https://weu.codesigning.azure.net
+      #     trusted-signing-account-name: ardimedia-signing
+      #     certificate-profile-name: ardimedia-public
+      #     files-folder: ${{ github.workspace }}/src/BindingRedirectFixer/bin/Release/net10.0
+      #     files-folder-filter: vsix
+      #     file-digest: SHA256
+      #     timestamp-rfc3161: http://timestamp.acs.microsoft.com
+
+  publish:
+    needs: build
+    runs-on: windows-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download VSIX artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BindingRedirectFixer-vsix
+          path: artifacts
+
+      - name: Find VSIX
+        id: vsix
+        shell: bash
+        run: |
+          VSIX_PATH=$(find artifacts -name "*.vsix" | head -1)
+          echo "path=$VSIX_PATH" >> "$GITHUB_OUTPUT"
+          echo "Will publish: $VSIX_PATH"
+
+      - name: Publish to Marketplace
+        shell: pwsh
+        env:
+          VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
+        run: |
+          # Download VsixPublisher from the VSSDK NuGet package
+          $nugetUrl = "https://api.nuget.org/v3-flatcontainer/microsoft.vssdk.buildtools/17.14.2225/microsoft.vssdk.buildtools.17.14.2225.nupkg"
+          $nupkgPath = "$env:TEMP\vssdk.nupkg"
+          $extractPath = "$env:TEMP\vssdk"
+          Invoke-WebRequest -Uri $nugetUrl -OutFile $nupkgPath
+          Expand-Archive -Path $nupkgPath -DestinationPath $extractPath -Force
+          $vsixPublisher = Get-ChildItem -Path $extractPath -Recurse -Filter "VsixPublisher.exe" | Select-Object -First 1
+
+          & $vsixPublisher.FullName publish `
+            -payload "${{ steps.vsix.outputs.path }}" `
+            -publishManifest ".claude/publishManifest.json" `
+            -personalAccessToken "$env:VS_MARKETPLACE_PAT"

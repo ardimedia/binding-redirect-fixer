@@ -205,7 +205,7 @@
                     BorderBrush="#D4A030"
                     Padding="0,0,0,4"
                     Margin="0,0,6,0">
-                <Button Content="Learn"
+                <Button Content="Background"
                         Command="{Binding SwitchToLearnTabCommand}"
                         Padding="14,6"
                         FontWeight="{Binding LearnTabFontWeight}"
@@ -270,12 +270,12 @@
                           Margin="0,0,12,4" />
                 <Button Content="Analyse" Command="{Binding AnalyseCommand}" Padding="10,3" Margin="0,0,4,4" />
                 <Button Content="Fix Shown Items" Command="{Binding FixAllCommand}" Padding="10,3" Margin="0,0,8,4" />
-                <CheckBox IsChecked="{Binding CreateBackup}"
+                <CheckBox Content="Backup"
+                          IsChecked="{Binding CreateBackup}"
                           VerticalAlignment="Center"
+                          Foreground="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}"
                           Margin="0,0,0,4"
-                          ToolTipService.ToolTip="Create a timestamped backup of config files before applying fixes">
-                    <TextBlock Text="Backup" VerticalAlignment="Center" />
-                </CheckBox>
+                          ToolTipService.ToolTip="Create a timestamped backup of config files before applying fixes" />
             </WrapPanel>
 
             <!-- Status Bar -->
