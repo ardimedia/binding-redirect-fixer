@@ -97,7 +97,7 @@ jobs:
           VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
         run: |
           # Download VsixPublisher from the VSSDK NuGet package
-          $nugetUrl = "https://api.nuget.org/v3-flatcontainer/microsoft.vssdk.buildtools/17.14.2225/microsoft.vssdk.buildtools.17.14.2225.nupkg"
+          $nugetUrl = "https://api.nuget.org/v3-flatcontainer/microsoft.vssdk.buildtools/17.14.2120/microsoft.vssdk.buildtools.17.14.2120.nupkg"
           $nupkgPath = "$env:TEMP\vssdk.nupkg"
           $extractPath = "$env:TEMP\vssdk"
           Invoke-WebRequest -Uri $nugetUrl -OutFile $nupkgPath
