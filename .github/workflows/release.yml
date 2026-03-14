@@ -92,19 +92,8 @@ jobs:
           echo "Will publish: $VSIX_PATH"
 
       - name: Publish to Marketplace
-        shell: pwsh
-        env:
-          VS_MARKETPLACE_PAT: ${{ secrets.VS_MARKETPLACE_PAT }}
-        run: |
-          # Download VsixPublisher from the VSSDK NuGet package
-          $nugetUrl = "https://api.nuget.org/v3-flatcontainer/microsoft.vssdk.buildtools/17.14.2120/microsoft.vssdk.buildtools.17.14.2120.nupkg"
-          $nupkgPath = "$env:TEMP\vssdk.nupkg"
-          $extractPath = "$env:TEMP\vssdk"
-          Invoke-WebRequest -Uri $nugetUrl -OutFile $nupkgPath
-          Expand-Archive -Path $nupkgPath -DestinationPath $extractPath -Force
-          $vsixPublisher = Get-ChildItem -Path $extractPath -Recurse -Filter "VsixPublisher.exe" | Select-Object -First 1
-
-          & $vsixPublisher.FullName publish `
-            -payload "${{ steps.vsix.outputs.path }}" `
-            -publishManifest ".claude/publishManifest.json" `
-            -personalAccessToken "$env:VS_MARKETPLACE_PAT"
+        uses: cezarypiatek/VsixPublisherAction@1.1
+        with:
+          extension-file: ${{ steps.vsix.outputs.path }}
+          publish-manifest-file: .claude/publishManifest.json
+          personal-access-code: ${{ secrets.VS_MARKETPLACE_PAT }}

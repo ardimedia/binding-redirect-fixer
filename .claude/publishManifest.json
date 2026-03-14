@@ -4,7 +4,7 @@
     "internalName": "BindingRedirectFixer"
   },
   "overview": "overview.md",
-  "categories": [ "coding", "testing", "debugging" ],
+  "categories": [ "coding", "build" ],
   "publisher": "Ardimedia",
   "pricing": "Free",
   "repo": "https://github.com/ardimedia/binding-redirect-fixer",

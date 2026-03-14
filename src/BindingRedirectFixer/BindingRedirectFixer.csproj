@@ -11,7 +11,7 @@
     <VssdkCompatibleExtension>false</VssdkCompatibleExtension>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.1.2</Version>
+    <Version>0.1.3</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>

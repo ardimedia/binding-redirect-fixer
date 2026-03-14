@@ -5,6 +5,17 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.3] - 2026-03-15
+
+### Added
+
+- GitHub Actions workflow for automated build and publish to VS Marketplace
+
+### Fixed
+
+- Publish workflow: use VsixPublisherAction to avoid .NET assembly conflicts on CI runners
+- Publish manifest: remove invalid categories (debugging, testing)
+
 ## [0.1.0] - 2026-03-13
 
 ### Added
