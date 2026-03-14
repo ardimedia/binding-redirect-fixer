@@ -9,20 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Split CI into separate build and release workflows
-- Build workflow (push/PR) no longer creates artifacts
-- GitHub Release with .vsix download now created automatically on version tag
-
-## [0.1.3] - 2026-03-15
-
-### Added
-
-- GitHub Actions workflow for automated build and publish to VS Marketplace
-
-### Fixed
-
-- Publish workflow: use VsixPublisherAction to avoid .NET assembly conflicts on CI runners
-- Publish manifest: remove invalid categories (debugging, testing)
+- Fix minor UI enhancements
 
 ## [0.1.0] - 2026-03-13
 

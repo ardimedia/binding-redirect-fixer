@@ -1,6 +1,6 @@
 ---
 status: Stable
-updated: 2026-03-14 23:40h
+updated: 2026-03-15 00:05h
 references:
   - .claude/deploy.md — Marketplace publishing details
   - .claude/enhancements.md — Signing roadmap
@@ -23,20 +23,35 @@ Ask the user which version bump to apply if not specified:
 
 Edit the `<Version>` property in `src/BindingRedirectFixer/BindingRedirectFixer.csproj`.
 
-## 3. Commit the version bump
+## 3. Update CHANGELOG.md
+
+Add a new section at the top of `CHANGELOG.md` (below the header), following the [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) format:
+
+```markdown
+## [{new_version}] - {YYYY-MM-DD}
+
+### Added / Changed / Fixed / Removed
+- Description of changes
+```
+
+Ask the user what changed, or review recent commits since the last tag to summarize changes.
+Use the appropriate subsections: **Added** for new features, **Changed** for modifications,
+**Fixed** for bug fixes, **Removed** for removed features.
+
+## 4. Commit the version bump
 
 ```bash
-git add src/BindingRedirectFixer/BindingRedirectFixer.csproj
+git add src/BindingRedirectFixer/BindingRedirectFixer.csproj CHANGELOG.md
 git commit -m "bump version to {new_version}"
 ```
 
-## 4. Create a git tag
+## 5. Create a git tag
 
 ```bash
 git tag v{new_version}
 ```
 
-## 5. Push commit and tag
+## 6. Push commit and tag
 
 ```bash
 git push && git push --tags
@@ -44,7 +59,7 @@ git push && git push --tags
 
 This triggers the GitHub Actions workflow (`.github/workflows/release.yml`) which builds the VSIX and publishes it to the Visual Studio Marketplace.
 
-## 6. Verify
+## 7. Verify
 
 After pushing, tell the user to check the workflow run at:
 `https://github.com/ardimedia/binding-redirect-fixer/actions`
