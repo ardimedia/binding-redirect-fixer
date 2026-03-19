@@ -61,10 +61,10 @@ public sealed class BindingRedirectAnalyzer
 
             // Step 4: Read existing config redirects
             string? configPath = _configPatcher.GetConfigFilePath(projectDirectory);
-            Dictionary<string, (string OldVersion, string NewVersion)> existingRedirects =
+            Dictionary<string, (string OldVersion, string NewVersion, string PublicKeyToken)> existingRedirects =
                 configPath is not null
                     ? _configPatcher.ReadRedirects(configPath)
-                    : new Dictionary<string, (string, string)>();
+                    : new Dictionary<string, (string, string, string)>();
 
             // Step 4b: Detect duplicate binding redirect entries
             HashSet<string> duplicateAssemblies = configPath is not null
@@ -111,10 +111,11 @@ public sealed class BindingRedirectAnalyzer
                     entry.PhysicalVersion = physicalVersion;
                 }
 
-                // Populate current redirect version
+                // Populate current redirect version and config public key token
                 if (existingRedirects.TryGetValue(assemblyName, out var redirect))
                 {
                     entry.CurrentRedirectVersion = redirect.NewVersion;
+                    entry.ConfigPublicKeyToken = redirect.PublicKeyToken;
                 }
 
                 // Populate from missing redirect detector if no resolved info exists
@@ -215,6 +216,34 @@ public sealed class BindingRedirectAnalyzer
             {
                 // Version parsing failed — fall through to other rules
             }
+        }
+
+        // Rule 0c: TOKEN_LOST — the resolved assembly's public key token is empty
+        // but the config file has a non-empty token. This usually means the NuGet package
+        // resolved an unsigned build of the assembly (e.g., preview/RC build, wrong TFM,
+        // or the package author dropped strong naming).
+        // Preserve the config's token so the runtime can still match the assembly identity.
+        if (!string.IsNullOrEmpty(entry.CurrentRedirectVersion) &&
+            !string.IsNullOrEmpty(entry.ConfigPublicKeyToken) &&
+            string.IsNullOrEmpty(entry.PublicKeyToken))
+        {
+            // Preserve the config token for any subsequent fix operations
+            entry.PublicKeyToken = entry.ConfigPublicKeyToken;
+
+            bool versionNeedsUpdate = !string.IsNullOrEmpty(target) &&
+                !string.Equals(entry.CurrentRedirectVersion, target, StringComparison.OrdinalIgnoreCase);
+
+            entry.Status = RedirectStatus.TokenLost;
+            entry.DiagnosticMessage =
+                $"The resolved assembly for '{entry.Name}' has no public key token (unsigned), " +
+                $"but the config file has publicKeyToken=\"{entry.ConfigPublicKeyToken}\". " +
+                "This usually means the NuGet package resolved an unsigned build of the assembly. " +
+                $"The original token will be preserved." +
+                (versionNeedsUpdate
+                    ? $" The redirect version also needs updating from {entry.CurrentRedirectVersion} to {target}."
+                    : string.Empty);
+            entry.SuggestedAction = versionNeedsUpdate ? FixAction.UpdateRedirect : FixAction.None;
+            return;
         }
 
         // Rule 1: MISSING — no redirect exists but the assembly has version conflicts

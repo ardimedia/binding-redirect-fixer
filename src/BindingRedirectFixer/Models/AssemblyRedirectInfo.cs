@@ -23,7 +23,10 @@ public enum RedirectStatus
     Duplicate,
 
     /// <summary>Redirect targets a version not available on disk (bin/ DLL is older than NuGet resolved).</summary>
-    Mismatch
+    Mismatch,
+
+    /// <summary>The resolved assembly's public key token is empty but the config has a non-empty token (assembly may have lost strong naming).</summary>
+    TokenLost
 }
 
 /// <summary>
@@ -72,6 +75,10 @@ public class AssemblyRedirectInfo
     /// <summary>Culture from assembly metadata (typically "neutral").</summary>
     [DataMember]
     public string Culture { get; set; } = "neutral";
+
+    /// <summary>Public key token from the existing config file entry (used to detect token loss).</summary>
+    [DataMember]
+    public string ConfigPublicKeyToken { get; set; } = string.Empty;
 
     /// <summary>Assembly version from the NuGet cache/packages folder DLL.</summary>
     [DataMember]
@@ -145,6 +152,7 @@ public class AssemblyRedirectInfo
         RedirectStatus.Conflict => "\u2717",
         RedirectStatus.Duplicate => "\u2717",
         RedirectStatus.Mismatch => "\u26A0",
+        RedirectStatus.TokenLost => "\u26A0",
         _ => ""
     };
 

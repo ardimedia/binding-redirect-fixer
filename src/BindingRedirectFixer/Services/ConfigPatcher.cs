@@ -54,11 +54,11 @@ public sealed class ConfigPatcher
     /// </summary>
     /// <param name="configPath">Full path to the config file.</param>
     /// <returns>
-    /// Dictionary mapping assembly name to a tuple of (oldVersion range, newVersion).
+    /// Dictionary mapping assembly name to a tuple of (oldVersion range, newVersion, publicKeyToken).
     /// </returns>
-    public Dictionary<string, (string OldVersion, string NewVersion)> ReadRedirects(string configPath)
+    public Dictionary<string, (string OldVersion, string NewVersion, string PublicKeyToken)> ReadRedirects(string configPath)
     {
-        var results = new Dictionary<string, (string, string)>(StringComparer.OrdinalIgnoreCase);
+        var results = new Dictionary<string, (string, string, string)>(StringComparer.OrdinalIgnoreCase);
 
         if (!File.Exists(configPath))
         {
@@ -90,12 +90,13 @@ public sealed class ConfigPatcher
             string? name = identity.Attribute("name")?.Value;
             string? oldVersion = redirect.Attribute("oldVersion")?.Value;
             string? newVersion = redirect.Attribute("newVersion")?.Value;
+            string publicKeyToken = identity.Attribute("publicKeyToken")?.Value ?? string.Empty;
 
             if (!string.IsNullOrEmpty(name) &&
                 !string.IsNullOrEmpty(oldVersion) &&
                 !string.IsNullOrEmpty(newVersion))
             {
-                results[name] = (oldVersion, newVersion);
+                results[name] = (oldVersion, newVersion, publicKeyToken);
             }
         }
 
@@ -295,8 +296,15 @@ public sealed class ConfigPatcher
             return false;
         }
 
-        // Update identity attributes in case they changed
-        identity.SetAttributeValue("publicKeyToken", publicKeyToken);
+        // Update identity attributes in case they changed.
+        // If the incoming publicKeyToken is empty but the config already has one,
+        // preserve the existing token — the resolved DLL may have lost strong naming
+        // (e.g., unsigned preview build) but the runtime still needs the original token.
+        if (!string.IsNullOrEmpty(publicKeyToken))
+        {
+            identity.SetAttributeValue("publicKeyToken", publicKeyToken);
+        }
+
         identity.SetAttributeValue("culture", culture);
 
         // Update the redirect version range and target

@@ -79,7 +79,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
         Issues = [];
         Projects = ["All Projects"];
-        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "OK"];
+        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "OK"];
 
         AnalyseCommand = new AsyncCommand(ExecuteAnalyseAsync);
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
@@ -1150,7 +1150,11 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
                         + $"  newVersion=\"{fixedVersion}\"\n"
                         + (actionVerb == "Deduplicated" ? $"  (removed duplicate entries, kept one targeting {fixedVersion})"
                             : actionVerb == "Added" ? $"  (new entry added)"
-                            : $"  (was: newVersion=\"{oldVersion}\")");
+                            : $"  (was: newVersion=\"{oldVersion}\")")
+                        + (!string.IsNullOrEmpty(model.ConfigPublicKeyToken) &&
+                           string.Equals(model.PublicKeyToken, model.ConfigPublicKeyToken, StringComparison.OrdinalIgnoreCase)
+                            ? $"\n  Public key token preserved as \"{model.ConfigPublicKeyToken}\" (resolved DLL was unsigned)."
+                            : string.Empty);
                 RaiseNotifyPropertyChangedEvent(nameof(FixChangeLogVisibility));
 
                 // Reload the config snippet to show the updated XML
@@ -1297,6 +1301,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
             "Mismatch" => filtered.Where(r => r.Status == RedirectStatus.Mismatch),
             "Duplicate" => filtered.Where(r => r.Status == RedirectStatus.Duplicate),
             "Conflict" => filtered.Where(r => r.Status == RedirectStatus.Conflict),
+            "Token Lost" => filtered.Where(r => r.Status == RedirectStatus.TokenLost),
             "OK" => filtered.Where(r => r.Status == RedirectStatus.OK),
             _ => filtered // "All"
         };
@@ -1381,6 +1386,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Conflict => "CONFLICT",
         RedirectStatus.Duplicate => "DUPLICATE",
         RedirectStatus.Mismatch => "MISMATCH",
+        RedirectStatus.TokenLost => "TOKEN LOST",
         RedirectStatus.OK => "OK",
         _ => ""
     }}";
@@ -1394,6 +1400,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Conflict => "CONFLICT",
         RedirectStatus.Duplicate => "DUPLICATE",
         RedirectStatus.Mismatch => "MISMATCH",
+        RedirectStatus.TokenLost => "TOKEN LOST",
         RedirectStatus.OK => "OK",
         _ => ""
     };

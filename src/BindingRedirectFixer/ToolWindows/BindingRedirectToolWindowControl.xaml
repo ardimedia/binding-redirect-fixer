@@ -605,6 +605,18 @@
                     </StackPanel>
                 </Border>
 
+                <!-- TOKEN LOST Card -->
+                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="TOKEN LOST  —  Public Key Token Dropped" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The config file has a non-empty publicKeyToken for this assembly, but the NuGet-resolved DLL is unsigned (empty token). This can happen when a NuGet package ships an unsigned preview/RC build, when the wrong target framework is resolved, or when a locally-built DLL replaced the NuGet-restored one." />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="Writing an empty publicKeyToken to the config would break runtime assembly loading because the CLR cannot match the empty token to the original strong-named reference. The tool preserves the original token from the config file." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The original token is preserved. If the version also changed, the tool offers [Update Redirect]" />
+                    </StackPanel>
+                </Border>
+
                 <!-- Version Mismatch Info Card -->
                 <Border BorderBrush="#5090E0" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,24" Padding="14,10" Background="Transparent">
                     <StackPanel>
