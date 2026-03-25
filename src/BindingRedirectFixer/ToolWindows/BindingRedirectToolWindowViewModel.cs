@@ -34,6 +34,8 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     private string _selectedProject = "All Projects";
     private string _selectedStatus = "All";
     private string _assemblyFilter = string.Empty;
+    private string _sortColumn = "Project";
+    private bool _sortAscending = true;
     private AssemblyRedirectInfoViewModel? _selectedIssue;
     private bool _isScanning;
     private bool _showInfoBar = true;
@@ -97,6 +99,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         ClearAssemblyFilterCommand = new AsyncCommand(ExecuteClearAssemblyFilterAsync);
         SplitLeftCommand = new AsyncCommand(ExecuteSplitLeftAsync);
         SplitRightCommand = new AsyncCommand(ExecuteSplitRightAsync);
+        SortCommand = new AsyncCommand(ExecuteSortAsync);
     }
 
     /// <summary>
@@ -523,6 +526,41 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     /// <summary>Command to shift the detail split rightward (more space for left panel).</summary>
     [DataMember]
     public IAsyncCommand SplitRightCommand { get; }
+
+    /// <summary>Command to sort by a column. The parameter is the column name.</summary>
+    [DataMember]
+    public IAsyncCommand SortCommand { get; }
+
+    /// <summary>Sort indicator text for the Project column header.</summary>
+    [DataMember]
+    public string SortIndicatorProject => GetSortIndicator("Project");
+
+    /// <summary>Sort indicator text for the Assembly column header.</summary>
+    [DataMember]
+    public string SortIndicatorAssembly => GetSortIndicator("Assembly");
+
+    /// <summary>Sort indicator text for the Resolved column header.</summary>
+    [DataMember]
+    public string SortIndicatorResolved => GetSortIndicator("Resolved");
+
+    /// <summary>Sort indicator text for the Requested column header.</summary>
+    [DataMember]
+    public string SortIndicatorRequested => GetSortIndicator("Requested");
+
+    /// <summary>Sort indicator text for the bin/ DLL column header.</summary>
+    [DataMember]
+    public string SortIndicatorBinDll => GetSortIndicator("BinDll");
+
+    /// <summary>Sort indicator text for the Config column header.</summary>
+    [DataMember]
+    public string SortIndicatorConfig => GetSortIndicator("Config");
+
+    /// <summary>Sort indicator text for the Status column header.</summary>
+    [DataMember]
+    public string SortIndicatorStatus => GetSortIndicator("Status");
+
+    private string GetSortIndicator(string column)
+        => _sortColumn == column ? (_sortAscending ? " \u25B2" : " \u25BC") : "";
 
     // ---- Public methods ----
 
@@ -1270,6 +1308,33 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         }, token);
     }
 
+    private Task ExecuteSortAsync(object? parameter, CancellationToken cancellationToken)
+    {
+        if (parameter is not string column || _allResults.Count == 0)
+            return Task.CompletedTask;
+
+        if (_sortColumn == column)
+        {
+            _sortAscending = !_sortAscending;
+        }
+        else
+        {
+            _sortColumn = column;
+            _sortAscending = true;
+        }
+
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorProject));
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorAssembly));
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorResolved));
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorRequested));
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorBinDll));
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorConfig));
+        RaiseNotifyPropertyChangedEvent(nameof(SortIndicatorStatus));
+
+        ApplyFilters();
+        return Task.CompletedTask;
+    }
+
     private void ApplyFilters()
     {
         Issues.Clear();
@@ -1306,6 +1371,21 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
             "OK" => filtered.Where(r => r.Status == RedirectStatus.OK),
             _ => filtered // "All"
         };
+
+        // Sort
+        Func<AssemblyRedirectInfo, string> keySelector = _sortColumn switch
+        {
+            "Assembly" => r => r.Name,
+            "Resolved" => r => r.ResolvedAssemblyVersion ?? "",
+            "Requested" => r => r.RequestedVersion ?? "",
+            "BinDll" => r => r.PhysicalVersion ?? "",
+            "Config" => r => r.CurrentRedirectVersion ?? "",
+            "Status" => r => r.Status.ToString(),
+            _ => r => r.ProjectName // "Project"
+        };
+        filtered = _sortAscending
+            ? filtered.OrderBy(keySelector, StringComparer.OrdinalIgnoreCase)
+            : filtered.OrderByDescending(keySelector, StringComparer.OrdinalIgnoreCase);
 
         var resultList = filtered.ToList();
 

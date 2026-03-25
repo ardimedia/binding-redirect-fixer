@@ -5,6 +5,14 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.7] - 2026-03-25
+
+### Added
+
+- Resizable columns: switched from fixed-width Grid layout to native WPF GridView with drag-to-resize column headers
+- Sortable columns: click any column header to sort ascending/descending, with sort indicator (▲/▼)
+- Horizontal scrollbar for overflow when columns exceed available width
+
 ## [0.1.6] - 2026-03-25
 
 ### Added

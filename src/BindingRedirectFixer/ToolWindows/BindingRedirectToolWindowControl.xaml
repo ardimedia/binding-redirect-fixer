@@ -314,90 +314,126 @@
                 </Grid>
             </Border>
 
-            <!-- Column Headers -->
-            <Border Grid.Row="3" Margin="8,0,8,0" Padding="6,5" Opacity="0.7" Background="Transparent">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="120" />
-                        <ColumnDefinition Width="180" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="100" />
-                        <ColumnDefinition Width="80" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Column="0" Text="Project" FontWeight="Bold" FontSize="11" />
-                    <TextBlock Grid.Column="1" Text="Assembly" FontWeight="Bold" FontSize="11" />
-                    <TextBlock Grid.Column="2" Text="Resolved" FontWeight="Bold" FontSize="11"
-                               ToolTip="Assembly Version from NuGet Cache — Read from the actual DLL that NuGet's dependency resolver selected. Combined with bin/ DLL to determine the effective redirect target (highest wins)." />
-                    <TextBlock Grid.Column="3" Text="Requested" FontWeight="Bold" FontSize="11"
-                               ToolTip="Package Version — Declared in PackageReference or packages.config. May differ from resolved due to version ranges or transitive dependencies. Informational only." />
-                    <TextBlock Grid.Column="4" Text="bin/ DLL" FontWeight="Bold" FontSize="11"
-                               ToolTip="Physical DLL on Disk — Can be stale after incomplete builds or failed cleans. A mismatch signals a build problem, not a redirect problem." />
-                    <TextBlock Grid.Column="5" Text="Config" FontWeight="Bold" FontSize="11"
-                               ToolTip="Current Binding Redirect — What the runtime uses now. Should match MAX(Resolved, bin/ DLL) for correct operation." />
-                    <TextBlock Grid.Column="6" Text="Status" FontWeight="Bold" FontSize="11" />
-                </Grid>
-            </Border>
-
-            <!-- Issues List + Detail Panel -->
+            <!-- Issues List + Detail Panel (Row 3 unused, list starts at Row 4) -->
             <Grid Grid.Row="4" Margin="8,0,8,4">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <ListBox Grid.Row="0"
-                         ItemsSource="{Binding Issues}"
-                         VirtualizingStackPanel.IsVirtualizing="True"
-                         VirtualizingStackPanel.VirtualizationMode="Recycling"
-                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                         Background="Transparent"
-                         BorderThickness="0">
-                    <ListBox.Resources>
-                        <!-- Remove default ListBoxItem selection highlight -->
-                        <Style TargetType="ListBoxItem">
-                            <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                            <Setter Property="Padding" Value="0" />
-                            <Setter Property="Margin" Value="0" />
-                            <Setter Property="Template">
-                                <Setter.Value>
-                                    <ControlTemplate TargetType="ListBoxItem">
-                                        <ContentPresenter />
-                                    </ControlTemplate>
-                                </Setter.Value>
-                            </Setter>
-                        </Style>
-                    </ListBox.Resources>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate>
-                            <Button Command="{Binding SelectCommand}"
-                                    HorizontalContentAlignment="Stretch"
-                                    Padding="0" Margin="0"
-                                    BorderThickness="0,0,0,1" BorderBrush="Gray"
-                                    Style="{StaticResource ChromelessButton}">
-                                <Grid Margin="6,4">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="120" />
-                                        <ColumnDefinition Width="180" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="100" />
-                                        <ColumnDefinition Width="80" />
-                                    </Grid.ColumnDefinitions>
-                                    <TextBlock Grid.Column="0" Text="{Binding ProjectName}" FontSize="11" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="2" Text="{Binding ResolvedAssemblyVersion}" FontSize="11" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="3" Text="{Binding RequestedVersion}" FontSize="11" Opacity="0.6" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="4" Text="{Binding PhysicalVersion}" FontSize="11" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="5" Text="{Binding CurrentRedirectVersion}" FontSize="11" VerticalAlignment="Center" />
-                                    <TextBlock Grid.Column="6" Text="{Binding StatusText}" FontSize="11" VerticalAlignment="Center" />
-                                </Grid>
-                            </Button>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
+                <ListView Grid.Row="0"
+                          x:Name="IssuesListView"
+                          ItemsSource="{Binding Issues}"
+                          SelectedItem="{Binding SelectedIssue}"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                          Background="Transparent"
+                          BorderThickness="0"
+                          FontSize="11">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Width="160" DisplayMemberBinding="{Binding ProjectName}">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="Project"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Project" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorProject, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="220">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="Assembly"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Assembly" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorAssembly, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Width="100" DisplayMemberBinding="{Binding ResolvedAssemblyVersion}">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="Resolved"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            ToolTip="Assembly Version from NuGet Cache — Read from the actual DLL that NuGet's dependency resolver selected. Combined with bin/ DLL to determine the effective redirect target (highest wins).">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Resolved" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorResolved, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="100">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="Requested"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            ToolTip="Package Version — Declared in PackageReference or packages.config. May differ from resolved due to version ranges or transitive dependencies. Informational only.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Requested" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorRequested, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                                <GridViewColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding RequestedVersion}" Opacity="0.6" />
+                                    </DataTemplate>
+                                </GridViewColumn.CellTemplate>
+                            </GridViewColumn>
+                            <GridViewColumn Width="100" DisplayMemberBinding="{Binding PhysicalVersion}">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="BinDll"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            ToolTip="Physical DLL on Disk — Can be stale after incomplete builds or failed cleans. A mismatch signals a build problem, not a redirect problem.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="bin/ DLL" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorBinDll, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="100" DisplayMemberBinding="{Binding CurrentRedirectVersion}">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="Config"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            ToolTip="Current Binding Redirect — What the runtime uses now. Should match MAX(Resolved, bin/ DLL) for correct operation.">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Config" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorConfig, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                            <GridViewColumn Width="120" DisplayMemberBinding="{Binding StatusText}">
+                                <GridViewColumn.Header>
+                                    <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
+                                            CommandParameter="Status"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0">
+                                        <StackPanel Orientation="Horizontal">
+                                            <TextBlock Text="Status" FontWeight="Bold" />
+                                            <TextBlock Text="{Binding DataContext.SortIndicatorStatus, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
+                                        </StackPanel>
+                                    </Button>
+                                </GridViewColumn.Header>
+                            </GridViewColumn>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
 
                 <!-- Detail Panel -->
                 <Border Grid.Row="1"
