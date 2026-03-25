@@ -171,6 +171,18 @@ public sealed class BindingRedirectAnalyzer
     {
         string? target = entry.EffectiveTargetVersion;
 
+        // Rule -1: DEPRECATED — package replaced by a modern equivalent
+        if (DeprecatedPackageRegistry.TryGetDeprecation(entry.Name, out var deprecation))
+        {
+            entry.Status = RedirectStatus.Deprecated;
+            entry.DiagnosticMessage =
+                $"'{entry.Name}' is deprecated. Migrate to '{deprecation!.ReplacementPackage}' " +
+                "instead of fixing the binding redirect." +
+                (deprecation.MigrationUrl is not null ? $" See: {deprecation.MigrationUrl}" : "");
+            entry.SuggestedAction = FixAction.None;
+            return;
+        }
+
         // Rule 0: DUPLICATE — multiple binding redirect entries for the same assembly
         if (hasDuplicateRedirects)
         {

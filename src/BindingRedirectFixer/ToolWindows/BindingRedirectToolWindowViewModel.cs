@@ -79,7 +79,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
         Issues = [];
         Projects = ["All Projects"];
-        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "OK"];
+        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Deprecated", "OK"];
 
         AnalyseCommand = new AsyncCommand(ExecuteAnalyseAsync);
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
@@ -1302,6 +1302,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
             "Duplicate" => filtered.Where(r => r.Status == RedirectStatus.Duplicate),
             "Conflict" => filtered.Where(r => r.Status == RedirectStatus.Conflict),
             "Token Lost" => filtered.Where(r => r.Status == RedirectStatus.TokenLost),
+            "Deprecated" => filtered.Where(r => r.Status == RedirectStatus.Deprecated),
             "OK" => filtered.Where(r => r.Status == RedirectStatus.OK),
             _ => filtered // "All"
         };
@@ -1387,6 +1388,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Duplicate => "DUPLICATE",
         RedirectStatus.Mismatch => "MISMATCH",
         RedirectStatus.TokenLost => "TOKEN LOST",
+        RedirectStatus.Deprecated => "DEPRECATED",
         RedirectStatus.OK => "OK",
         _ => ""
     }}";
@@ -1401,6 +1403,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Duplicate => "DUPLICATE",
         RedirectStatus.Mismatch => "MISMATCH",
         RedirectStatus.TokenLost => "TOKEN LOST",
+        RedirectStatus.Deprecated => "DEPRECATED",
         RedirectStatus.OK => "OK",
         _ => ""
     };

@@ -26,7 +26,10 @@ public enum RedirectStatus
     Mismatch,
 
     /// <summary>The resolved assembly's public key token is empty but the config has a non-empty token (assembly may have lost strong naming).</summary>
-    TokenLost
+    TokenLost,
+
+    /// <summary>The package is deprecated and should be replaced with a modern equivalent.</summary>
+    Deprecated
 }
 
 /// <summary>
@@ -153,6 +156,7 @@ public class AssemblyRedirectInfo
         RedirectStatus.Duplicate => "\u2717",
         RedirectStatus.Mismatch => "\u26A0",
         RedirectStatus.TokenLost => "\u26A0",
+        RedirectStatus.Deprecated => "\u26D4",
         _ => ""
     };
 

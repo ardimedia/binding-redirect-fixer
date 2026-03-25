@@ -305,7 +305,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
-                               Text="STALE = binding redirect version is outdated and needs updating. MISSING = a binding redirect should be added to prevent version conflicts. Select a row for details."
+                               Text="STALE = redirect version outdated. MISSING = redirect should be added. DEPRECATED = package should be replaced with a modern equivalent. Select a row for details."
                                TextWrapping="Wrap" FontSize="11" Opacity="0.85" />
                     <Button Grid.Column="1" Content="X"
                             Command="{Binding DismissInfoBarCommand}"

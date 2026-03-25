@@ -5,6 +5,14 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.6] - 2026-03-25
+
+### Added
+
+- Deprecated package detection: flags packages like `Microsoft.Azure.Services.AppAuthentication` with migration guidance instead of fixing their binding redirects
+- Built-in registry of deprecated Azure SDK packages with replacement recommendations and migration URLs
+- New DEPRECATED status in the Issues grid with filtering support
+
 ## [0.1.5] - 2026-03-19
 
 ### Added
