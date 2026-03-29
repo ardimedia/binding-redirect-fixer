@@ -85,7 +85,8 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         Projects = ["All Projects"];
         Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Deprecated", "OK"];
 
-        AnalyseCommand = new AsyncCommand(ExecuteAnalyseOrCancelAsync);
+        AnalyseCommand = new AsyncCommand(ExecuteStartAnalyseAsync);
+        CancelCommand = new AsyncCommand(ExecuteCancelAsync);
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
         RefreshCommand = new AsyncCommand(ExecuteRefreshAsync);
         DismissInfoBarCommand = new AsyncCommand(ExecuteDismissInfoBarAsync);
@@ -218,6 +219,8 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
             {
                 RaiseNotifyPropertyChangedEvent(nameof(ScanningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(AnalyseButtonLabel));
+                RaiseNotifyPropertyChangedEvent(nameof(AnalyseButtonVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(CancelButtonVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(FixShownEnabled));
             }
         }
@@ -225,7 +228,15 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
     /// <summary>Button toggles between "Analyse" and "Cancel" during scan.</summary>
     [DataMember]
-    public string AnalyseButtonLabel => _isScanning ? "Cancel" : "Analyse";
+    public string AnalyseButtonLabel => _isScanning ? "Cancel Analyse" : "Analyse";
+
+    /// <summary>Analyse button visible when NOT scanning.</summary>
+    [DataMember]
+    public string AnalyseButtonVisibility => _isScanning ? "Collapsed" : "Visible";
+
+    /// <summary>Cancel button visible when scanning.</summary>
+    [DataMember]
+    public string CancelButtonVisibility => _isScanning ? "Visible" : "Collapsed";
 
     /// <summary>"Fix Shown Items" is only enabled when not scanning and issues exist.</summary>
     [DataMember]
@@ -478,6 +489,10 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     /// <summary>Command to trigger a full solution analysis for binding redirect issues.</summary>
     [DataMember]
     public IAsyncCommand AnalyseCommand { get; }
+
+    /// <summary>Cancel command -- separate from Analyse so it's not blocked by AsyncCommand.</summary>
+    [DataMember]
+    public IAsyncCommand CancelCommand { get; }
 
     /// <summary>Command to fix all detected Stale and Missing issues in one pass.</summary>
     [DataMember]
@@ -858,18 +873,29 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
     // ---- Command implementations ----
 
-    private async Task ExecuteAnalyseOrCancelAsync(object? parameter, CancellationToken cancellationToken)
+    private Task ExecuteStartAnalyseAsync(object? parameter, CancellationToken cancellationToken)
     {
         if (_isScanning)
         {
-            _scanCts?.Cancel();
-            StatusText = "Cancelling...";
-            return;
+            return Task.CompletedTask;
         }
+
+        IsScanning = true;
+        StatusText = "Starting analysis...";
 
         _scanCts?.Dispose();
         _scanCts = new CancellationTokenSource();
-        await ExecuteAnalyseAsync(null, _scanCts.Token);
+        var token = _scanCts.Token;
+
+        _ = Task.Run(() => ExecuteAnalyseAsync(null, token));
+        return Task.CompletedTask;
+    }
+
+    private Task ExecuteCancelAsync(object? parameter, CancellationToken cancellationToken)
+    {
+        _scanCts?.Cancel();
+        StatusText = "Cancelling...";
+        return Task.CompletedTask;
     }
 
     private async Task ExecuteAnalyseAsync(object? parameter, CancellationToken cancellationToken)

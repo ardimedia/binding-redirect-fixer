@@ -268,7 +268,12 @@
                           SelectedItem="{Binding SelectedStatus}"
                           MinWidth="110"
                           Margin="0,0,12,4" />
-                <Button Content="{Binding AnalyseButtonLabel}" Command="{Binding AnalyseCommand}" Padding="10,3" Margin="0,0,4,4" />
+                <Button Content="{Binding AnalyseButtonLabel}" Command="{Binding AnalyseCommand}"
+                        Visibility="{Binding AnalyseButtonVisibility}"
+                        Padding="10,3" Margin="0,0,4,4" />
+                <Button Content="Cancel Analyse" Command="{Binding CancelCommand}"
+                        Visibility="{Binding CancelButtonVisibility}"
+                        Padding="10,3" Margin="0,0,4,4" />
                 <Button Content="Fix Shown Items" Command="{Binding FixAllCommand}" IsEnabled="{Binding FixShownEnabled}" Padding="10,3" Margin="0,0,8,4" />
                 <CheckBox Content="Backup"
                           IsChecked="{Binding CreateBackup}"
