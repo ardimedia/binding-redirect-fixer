@@ -2,6 +2,8 @@ namespace BindingRedirectFixer.ToolWindows;
 
 using System.Runtime.Serialization;
 
+using Ardimedia.VsExtensions.Common.ViewModels;
+
 using Microsoft.VisualStudio.Extensibility;
 using Microsoft.VisualStudio.Extensibility.UI;
 using Microsoft.VisualStudio.ProjectSystem.Query;
@@ -12,23 +14,15 @@ using Microsoft.VisualStudio.Extensibility.Shell;
 
 /// <summary>
 /// ViewModel for the Binding Redirect Fixer tool window.
-/// Uses [DataContract] for Remote UI proxy binding between the extension process and VS process.
+/// Inherits solution monitoring, cancel/analyse, and scanning state from base class.
 /// </summary>
 [DataContract]
-public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
+public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
 {
-    private readonly VisualStudioExtensibility _extensibility;
     private readonly BindingRedirectAnalyzer _analyzer = new();
     private readonly ConfigPatcher _configPatcher = new();
 
-    /// <summary>
-    /// Stores the full unfiltered scan results so project filtering can work without re-scanning.
-    /// </summary>
     private List<AssemblyRedirectInfo> _allResults = [];
-
-    /// <summary>
-    /// Stores project directory paths keyed by project name, for fix operations.
-    /// </summary>
     private readonly Dictionary<string, string> _projectDirectories = new(StringComparer.OrdinalIgnoreCase);
 
     private string _selectedProject = "All Projects";
@@ -37,9 +31,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     private string _sortColumn = "Project";
     private bool _sortAscending = true;
     private AssemblyRedirectInfoViewModel? _selectedIssue;
-    private bool _isScanning;
     private bool _hasSolution;
-    private CancellationTokenSource? _scanCts;
     private bool _showInfoBar = true;
     private string _statusText = "Ready. Click Analyse to examine binding redirects.";
     private bool _isIssuesTabSelected = true;
@@ -47,13 +39,6 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     private bool _isFeedbackTabSelected;
     private bool _createBackup = true;
 
-    /// <summary>
-    /// Fingerprint of the last analysed solution (sorted project paths hash).
-    /// Used to detect when a different solution has been loaded.
-    /// </summary>
-    private string _lastSolutionFingerprint = string.Empty;
-
-    private CancellationTokenSource? _monitorCts;
     private CancellationTokenSource? _filterDebounceCts;
 
     /// <summary>
@@ -73,9 +58,8 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     /// </summary>
     /// <param name="extensibility">The extensibility object for accessing VS services.</param>
     public BindingRedirectToolWindowViewModel(VisualStudioExtensibility extensibility)
+        : base(extensibility)
     {
-        _extensibility = extensibility;
-
         // Load persisted user settings
         var settings = UserSettingsService.Load();
         _createBackup = settings.CreateBackup;
@@ -85,8 +69,6 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         Projects = ["All Projects"];
         Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Deprecated", "OK"];
 
-        AnalyseCommand = new AsyncCommand(ExecuteStartAnalyseAsync);
-        CancelCommand = new AsyncCommand(ExecuteCancelAsync);
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
         RefreshCommand = new AsyncCommand(ExecuteRefreshAsync);
         DismissInfoBarCommand = new AsyncCommand(ExecuteDismissInfoBarAsync);
@@ -209,38 +191,10 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     /// <summary>
     /// Indicates whether a scan is currently in progress.
     /// </summary>
-    [DataMember]
-    public bool IsScanning
-    {
-        get => _isScanning;
-        set
-        {
-            if (SetProperty(ref _isScanning, value))
-            {
-                RaiseNotifyPropertyChangedEvent(nameof(ScanningVisibility));
-                RaiseNotifyPropertyChangedEvent(nameof(AnalyseButtonLabel));
-                RaiseNotifyPropertyChangedEvent(nameof(AnalyseButtonVisibility));
-                RaiseNotifyPropertyChangedEvent(nameof(CancelButtonVisibility));
-                RaiseNotifyPropertyChangedEvent(nameof(FixShownEnabled));
-            }
-        }
-    }
-
-    /// <summary>Button toggles between "Analyse" and "Cancel" during scan.</summary>
-    [DataMember]
-    public string AnalyseButtonLabel => _isScanning ? "Cancel Analyse" : "Analyse";
-
-    /// <summary>Analyse button visible when NOT scanning.</summary>
-    [DataMember]
-    public string AnalyseButtonVisibility => _isScanning ? "Collapsed" : "Visible";
-
-    /// <summary>Cancel button visible when scanning.</summary>
-    [DataMember]
-    public string CancelButtonVisibility => _isScanning ? "Visible" : "Collapsed";
 
     /// <summary>"Fix Shown Items" is only enabled when not scanning and issues exist.</summary>
     [DataMember]
-    public bool FixShownEnabled => !_isScanning && _hasSolution && _allResults.Count > 0;
+    public bool FixShownEnabled => !this.IsScanning && _hasSolution && _allResults.Count > 0;
 
     /// <summary>
     /// Controls visibility of the dismissible info bar explaining version priority.
@@ -416,7 +370,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
     /// <summary>WPF Visibility for the scanning indicator.</summary>
     [DataMember]
-    public string ScanningVisibility => _isScanning ? "Visible" : "Collapsed";
+    public string ScanningVisibility => this.IsScanning ? "Visible" : "Collapsed";
 
     /// <summary>WPF Visibility for the detail panel.</summary>
     [DataMember]
@@ -485,14 +439,6 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     public string RightPanelWidth => $"{Math.Round((1 - _detailSplitRatio) * 100)}*";
 
     // ---- Commands ----
-
-    /// <summary>Command to trigger a full solution analysis for binding redirect issues.</summary>
-    [DataMember]
-    public IAsyncCommand AnalyseCommand { get; }
-
-    /// <summary>Cancel command -- separate from Analyse so it's not blocked by AsyncCommand.</summary>
-    [DataMember]
-    public IAsyncCommand CancelCommand { get; }
 
     /// <summary>Command to fix all detected Stale and Missing issues in one pass.</summary>
     [DataMember]
@@ -596,46 +542,22 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     /// then starts a background monitor that re-analyses when the solution changes.
     /// Called from <see cref="BindingRedirectToolWindow.GetContentAsync"/>.
     /// </summary>
-    public async Task RunInitialAnalysisAsync(CancellationToken cancellationToken)
+    protected override async Task OnSolutionOpenedAsync(CancellationToken cancellationToken)
     {
-        // Let the UI render first before starting analysis
-        StatusText = "Preparing analysis...";
-        await Task.Delay(500, cancellationToken).ConfigureAwait(false);
-
-        // Only run analysis if a solution is already loaded;
-        // otherwise the monitor will detect when one opens and trigger it
-        var fingerprint = await GetSolutionFingerprintAsync(cancellationToken).ConfigureAwait(false);
-        if (!string.IsNullOrEmpty(fingerprint))
-        {
-            await ExecuteAnalyseAsync(null, cancellationToken).ConfigureAwait(false);
-            _lastBinFolderWriteTime = GetBinFoldersWriteTime();
-        }
-        else
-        {
-            StatusText = "Waiting for a solution to be opened...";
-        }
-
-        StartSolutionMonitor();
+        await ExecuteAnalyseAsync(null, cancellationToken).ConfigureAwait(false);
+        _lastBinFolderWriteTime = GetBinFoldersWriteTime();
     }
 
-    /// <summary>
-    /// Clears all data and stops background monitoring.
-    /// Called when the tool window is closed or the solution is closed.
-    /// </summary>
-    public void ClearData()
+    protected override void OnSolutionClosed()
     {
-        _scanCts?.Cancel();
-        _monitorCts?.Cancel();
         _filterDebounceCts?.Cancel();
 
         Issues.Clear();
         _allResults.Clear();
         _projectDirectories.Clear();
         _hasSolution = false;
-        _lastSolutionFingerprint = string.Empty;
         _lastBinFolderWriteTime = DateTime.MinValue;
 
-        // Keep "All Projects" in the list to avoid ComboBox losing selection
         while (Projects.Count > 1)
         {
             Projects.RemoveAt(Projects.Count - 1);
@@ -654,6 +576,12 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         RaiseNotifyPropertyChangedEvent(nameof(FixShownEnabled));
 
         StatusText = "Waiting for a solution to be opened...";
+    }
+
+    protected override void OnIsScanningChanged()
+    {
+        RaiseNotifyPropertyChangedEvent(nameof(ScanningVisibility));
+        RaiseNotifyPropertyChangedEvent(nameof(FixShownEnabled));
     }
 
     /// <summary>
@@ -709,115 +637,8 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
     /// <summary>
     /// Starts a background task that periodically checks whether the loaded solution
-    /// has changed (by comparing project paths) or whether a build has completed
-    /// (by checking bin/ folder timestamps). When a change is detected, a new
-    /// analysis is triggered automatically.
-    /// </summary>
-    private void StartSolutionMonitor()
-    {
-        _monitorCts?.Cancel();
-        _monitorCts = new CancellationTokenSource();
-        var token = _monitorCts.Token;
-
-        _ = Task.Run(async () =>
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(TimeSpan.FromSeconds(5), token).ConfigureAwait(false);
-
-                    if (_isScanning)
-                    {
-                        continue;
-                    }
-
-                    // Check for solution change or close
-                    string currentFingerprint = await GetSolutionFingerprintAsync(token).ConfigureAwait(false);
-
-                    // Solution was closed — clear all data
-                    if (string.IsNullOrEmpty(currentFingerprint) &&
-                        !string.IsNullOrEmpty(_lastSolutionFingerprint))
-                    {
-                        ClearData();
-                        // Restart monitoring so we detect when a new solution opens
-                        StartSolutionMonitor();
-                        return;
-                    }
-
-                    // Different solution opened — two-pass debounce: fingerprint must be
-                    // stable for TWO consecutive checks (5s apart) to ensure all projects loaded
-                    if (!string.IsNullOrEmpty(currentFingerprint) &&
-                        currentFingerprint != _lastSolutionFingerprint)
-                    {
-                        StatusText = "Solution loading, waiting for all projects...";
-
-                        int stableCount = 0;
-                        string lastFingerprint = "";
-
-                        while (stableCount < 2 && !token.IsCancellationRequested)
-                        {
-                            await Task.Delay(TimeSpan.FromSeconds(5), token).ConfigureAwait(false);
-                            currentFingerprint = await GetSolutionFingerprintAsync(token).ConfigureAwait(false);
-
-                            if (string.IsNullOrEmpty(currentFingerprint))
-                            {
-                                break;
-                            }
-
-                            if (currentFingerprint == lastFingerprint)
-                            {
-                                stableCount++;
-                            }
-                            else
-                            {
-                                stableCount = 0;
-                                lastFingerprint = currentFingerprint;
-                                var projectCount = currentFingerprint.Split('|').Length;
-                                StatusText = $"Solution loading... {projectCount} project(s) found so far";
-                            }
-                        }
-
-                        if (!string.IsNullOrEmpty(currentFingerprint) && stableCount >= 2)
-                        {
-                            await ExecuteAnalyseAsync(null, token).ConfigureAwait(false);
-                            _lastBinFolderWriteTime = GetBinFoldersWriteTime();
-                        }
-
-                        continue;
-                    }
-
-                    // Check for bin/ folder changes (indicates a build completed)
-                    // Skip if still within the cooldown period after the last analysis
-                    var currentBinTime = GetBinFoldersWriteTime();
-                    if (currentBinTime > _lastBinFolderWriteTime && _projectDirectories.Count > 0)
-                    {
-                        _lastBinFolderWriteTime = currentBinTime;
-
-                        if (DateTime.UtcNow < _analysisCooldownUntil)
-                        {
-                            continue;
-                        }
-
-                        StatusText = "Build detected. Re-analysing...";
-                        await ExecuteAnalyseAsync(null, token).ConfigureAwait(false);
-                    }
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-                catch
-                {
-                    // Ignore transient errors in the monitor; retry on next cycle
-                }
-            }
-        }, token);
-    }
-
-    /// <summary>
     /// Gets the latest write time across all known project bin/ folders.
-    /// Used to detect when a build has completed and bin/ DLLs may have changed.
+    /// Used to detect when a build has completed.
     /// </summary>
     private DateTime GetBinFoldersWriteTime()
     {
@@ -833,7 +654,6 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
                     var dirTime = Directory.GetLastWriteTimeUtc(binDir);
                     if (dirTime > latest) latest = dirTime;
 
-                    // Also check immediate subdirectories (bin/Debug, bin/Release)
                     foreach (string subDir in Directory.EnumerateDirectories(binDir))
                     {
                         var subTime = Directory.GetLastWriteTimeUtc(subDir);
@@ -850,57 +670,10 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         return latest;
     }
 
-    /// <summary>
-    /// Queries the current solution's project paths and returns a fingerprint string.
-    /// Returns empty if no solution is loaded.
-    /// </summary>
-    private async Task<string> GetSolutionFingerprintAsync(CancellationToken cancellationToken)
-    {
-        var projects = await _extensibility.Workspaces().QueryProjectsAsync(
-            q => q.With(p => p.Path),
-            cancellationToken).ConfigureAwait(false);
-
-        var paths = projects
-            .Select(p => p.Path ?? string.Empty)
-            .Where(p => !string.IsNullOrEmpty(p))
-            .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-            .ToList();
-
-        if (paths.Count == 0) return string.Empty;
-
-        return string.Join("|", paths);
-    }
-
     // ---- Command implementations ----
-
-    private Task ExecuteStartAnalyseAsync(object? parameter, CancellationToken cancellationToken)
-    {
-        if (_isScanning)
-        {
-            return Task.CompletedTask;
-        }
-
-        IsScanning = true;
-        StatusText = "Starting analysis...";
-
-        _scanCts?.Dispose();
-        _scanCts = new CancellationTokenSource();
-        var token = _scanCts.Token;
-
-        _ = Task.Run(() => ExecuteAnalyseAsync(null, token));
-        return Task.CompletedTask;
-    }
-
-    private Task ExecuteCancelAsync(object? parameter, CancellationToken cancellationToken)
-    {
-        _scanCts?.Cancel();
-        StatusText = "Cancelling...";
-        return Task.CompletedTask;
-    }
 
     private async Task ExecuteAnalyseAsync(object? parameter, CancellationToken cancellationToken)
     {
-        IsScanning = true;
         StatusText = "Analysing solution for binding redirect issues...";
 
         try
@@ -925,26 +698,18 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
             RaiseNotifyPropertyChangedEvent(nameof(AssemblyFilter));
 
             // Query all projects from the solution via VS workspace APIs
-            var projects = await _extensibility.Workspaces().QueryProjectsAsync(
+            var projects = await this.Extensibility.Workspaces().QueryProjectsAsync(
                 q => q.With(p => p.Name).With(p => p.Path),
                 cancellationToken).ConfigureAwait(false);
 
             if (!projects.Any())
             {
                 _hasSolution = false;
-                _lastSolutionFingerprint = string.Empty;
                 StatusText = "Waiting for a solution to be opened...";
                 return;
             }
 
             _hasSolution = true;
-
-            // Update solution fingerprint so the monitor knows this solution was analysed
-            _lastSolutionFingerprint = string.Join("|",
-                projects
-                    .Select(p => p.Path ?? string.Empty)
-                    .Where(p => !string.IsNullOrEmpty(p))
-                    .OrderBy(p => p, StringComparer.OrdinalIgnoreCase));
 
             int projectCount = 0;
             int totalIssues = 0;
@@ -1005,7 +770,6 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         }
         finally
         {
-            IsScanning = false;
             _analysisCooldownUntil = DateTime.UtcNow + AnalysisCooldown;
         }
     }

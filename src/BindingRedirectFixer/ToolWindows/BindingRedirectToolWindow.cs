@@ -33,9 +33,7 @@ public class BindingRedirectToolWindow : ToolWindow
     public override async Task<IRemoteUserControl> GetContentAsync(CancellationToken cancellationToken)
     {
         _viewModel = new BindingRedirectToolWindowViewModel(Extensibility);
-
-        // Auto-start analysis when the tool window is shown
-        _ = _viewModel.RunInitialAnalysisAsync(cancellationToken);
+        _viewModel.Initialize();
 
         return new BindingRedirectToolWindowControl(_viewModel);
     }
@@ -43,7 +41,7 @@ public class BindingRedirectToolWindow : ToolWindow
     /// <inheritdoc />
     public override Task OnHideAsync(CancellationToken cancellationToken)
     {
-        _viewModel?.ClearData();
+        _viewModel?.Dispose();
         return base.OnHideAsync(cancellationToken);
     }
 }
