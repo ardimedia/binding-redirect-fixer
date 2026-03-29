@@ -228,6 +228,10 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
         }
     }
 
+    /// <summary>Extension version from the assembly.</summary>
+    [DataMember]
+    public string ExtensionVersion => GetType().Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+
     /// <summary>
     /// Status bar text displayed at the bottom of the tool window.
     /// </summary>

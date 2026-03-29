@@ -750,7 +750,7 @@
                     <StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="Version:   " FontSize="12" FontFamily="Consolas" Width="100" Opacity="0.6" />
-                            <TextBlock Text="0.1.7" FontSize="12" FontFamily="Consolas" />
+                            <TextBlock Text="{Binding ExtensionVersion}" FontSize="12" FontFamily="Consolas" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                             <TextBlock Text="Publisher: " FontSize="12" FontFamily="Consolas" Width="100" Opacity="0.6" />
