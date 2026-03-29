@@ -1,5 +1,7 @@
 # Binding Redirect Fixer
 
+[![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/Ardimedia.BindingRedirectFixer.svg)](https://marketplace.visualstudio.com/items?itemName=Ardimedia.BindingRedirectFixer)
+
 A Visual Studio 2026 extension that automatically detects and repairs stale or missing assembly binding redirects in .NET Framework projects.
 
 ## The Problem
