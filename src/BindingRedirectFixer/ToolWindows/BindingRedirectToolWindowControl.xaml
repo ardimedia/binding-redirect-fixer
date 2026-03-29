@@ -268,8 +268,8 @@
                           SelectedItem="{Binding SelectedStatus}"
                           MinWidth="110"
                           Margin="0,0,12,4" />
-                <Button Content="Analyse" Command="{Binding AnalyseCommand}" Padding="10,3" Margin="0,0,4,4" />
-                <Button Content="Fix Shown Items" Command="{Binding FixAllCommand}" Padding="10,3" Margin="0,0,8,4" />
+                <Button Content="{Binding AnalyseButtonLabel}" Command="{Binding AnalyseCommand}" Padding="10,3" Margin="0,0,4,4" />
+                <Button Content="Fix Shown Items" Command="{Binding FixAllCommand}" IsEnabled="{Binding FixShownEnabled}" Padding="10,3" Margin="0,0,8,4" />
                 <CheckBox Content="Backup"
                           IsChecked="{Binding CreateBackup}"
                           VerticalAlignment="Center"
@@ -337,7 +337,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Project"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0">
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Project" FontWeight="Bold" />
                                             <TextBlock Text="{Binding DataContext.SortIndicatorProject, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
@@ -349,7 +349,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Assembly"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0">
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Assembly" FontWeight="Bold" />
                                             <TextBlock Text="{Binding DataContext.SortIndicatorAssembly, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
@@ -423,7 +423,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Status"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0">
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Status" FontWeight="Bold" />
                                             <TextBlock Text="{Binding DataContext.SortIndicatorStatus, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
@@ -733,6 +733,28 @@
                                  Padding="8,6"
                                  Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
                                  BorderThickness="0" />
+                    </StackPanel>
+                </Border>
+
+                <!-- Extension Info -->
+                <Border Height="1" Opacity="0.15" Margin="0,0,0,16" Background="Gray" />
+
+                <TextBlock Text="Extension Info" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" />
+                <Border BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                        BorderThickness="1" CornerRadius="4" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Version:   " FontSize="12" FontFamily="Consolas" Width="100" Opacity="0.6" />
+                            <TextBlock Text="0.1.7" FontSize="12" FontFamily="Consolas" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                            <TextBlock Text="Publisher: " FontSize="12" FontFamily="Consolas" Width="100" Opacity="0.6" />
+                            <TextBlock Text="Ardimedia" FontSize="12" FontFamily="Consolas" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <TextBlock Text="License:   " FontSize="12" FontFamily="Consolas" Width="100" Opacity="0.6" />
+                            <TextBlock Text="MIT" FontSize="12" FontFamily="Consolas" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
 

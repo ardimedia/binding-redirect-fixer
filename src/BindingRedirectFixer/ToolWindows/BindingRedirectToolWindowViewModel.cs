@@ -38,6 +38,8 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     private bool _sortAscending = true;
     private AssemblyRedirectInfoViewModel? _selectedIssue;
     private bool _isScanning;
+    private bool _hasSolution;
+    private CancellationTokenSource? _scanCts;
     private bool _showInfoBar = true;
     private string _statusText = "Ready. Click Analyse to examine binding redirects.";
     private bool _isIssuesTabSelected = true;
@@ -83,7 +85,7 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         Projects = ["All Projects"];
         Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Deprecated", "OK"];
 
-        AnalyseCommand = new AsyncCommand(ExecuteAnalyseAsync);
+        AnalyseCommand = new AsyncCommand(ExecuteAnalyseOrCancelAsync);
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
         RefreshCommand = new AsyncCommand(ExecuteRefreshAsync);
         DismissInfoBarCommand = new AsyncCommand(ExecuteDismissInfoBarAsync);
@@ -215,9 +217,19 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
             if (SetProperty(ref _isScanning, value))
             {
                 RaiseNotifyPropertyChangedEvent(nameof(ScanningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(AnalyseButtonLabel));
+                RaiseNotifyPropertyChangedEvent(nameof(FixShownEnabled));
             }
         }
     }
+
+    /// <summary>Button toggles between "Analyse" and "Cancel" during scan.</summary>
+    [DataMember]
+    public string AnalyseButtonLabel => _isScanning ? "Cancel" : "Analyse";
+
+    /// <summary>"Fix Shown Items" is only enabled when not scanning and issues exist.</summary>
+    [DataMember]
+    public bool FixShownEnabled => !_isScanning && _hasSolution && _allResults.Count > 0;
 
     /// <summary>
     /// Controls visibility of the dismissible info bar explaining version priority.
@@ -597,12 +609,14 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
     /// </summary>
     public void ClearData()
     {
+        _scanCts?.Cancel();
         _monitorCts?.Cancel();
         _filterDebounceCts?.Cancel();
 
         Issues.Clear();
         _allResults.Clear();
         _projectDirectories.Clear();
+        _hasSolution = false;
         _lastSolutionFingerprint = string.Empty;
         _lastBinFolderWriteTime = DateTime.MinValue;
 
@@ -622,8 +636,9 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
         RaiseNotifyPropertyChangedEvent(nameof(SelectedStatus));
         RaiseNotifyPropertyChangedEvent(nameof(AssemblyFilter));
         RaiseNotifyPropertyChangedEvent(nameof(AssemblyFilterClearVisibility));
+        RaiseNotifyPropertyChangedEvent(nameof(FixShownEnabled));
 
-        StatusText = "Ready. Click Analyse to examine binding redirects.";
+        StatusText = "Waiting for a solution to be opened...";
     }
 
     /// <summary>
@@ -715,12 +730,45 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
                         return;
                     }
 
-                    // Different solution opened — re-analyse
+                    // Different solution opened — two-pass debounce: fingerprint must be
+                    // stable for TWO consecutive checks (5s apart) to ensure all projects loaded
                     if (!string.IsNullOrEmpty(currentFingerprint) &&
                         currentFingerprint != _lastSolutionFingerprint)
                     {
-                        await ExecuteAnalyseAsync(null, token).ConfigureAwait(false);
-                        _lastBinFolderWriteTime = GetBinFoldersWriteTime();
+                        StatusText = "Solution loading, waiting for all projects...";
+
+                        int stableCount = 0;
+                        string lastFingerprint = "";
+
+                        while (stableCount < 2 && !token.IsCancellationRequested)
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(5), token).ConfigureAwait(false);
+                            currentFingerprint = await GetSolutionFingerprintAsync(token).ConfigureAwait(false);
+
+                            if (string.IsNullOrEmpty(currentFingerprint))
+                            {
+                                break;
+                            }
+
+                            if (currentFingerprint == lastFingerprint)
+                            {
+                                stableCount++;
+                            }
+                            else
+                            {
+                                stableCount = 0;
+                                lastFingerprint = currentFingerprint;
+                                var projectCount = currentFingerprint.Split('|').Length;
+                                StatusText = $"Solution loading... {projectCount} project(s) found so far";
+                            }
+                        }
+
+                        if (!string.IsNullOrEmpty(currentFingerprint) && stableCount >= 2)
+                        {
+                            await ExecuteAnalyseAsync(null, token).ConfigureAwait(false);
+                            _lastBinFolderWriteTime = GetBinFoldersWriteTime();
+                        }
+
                         continue;
                     }
 
@@ -810,6 +858,20 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
     // ---- Command implementations ----
 
+    private async Task ExecuteAnalyseOrCancelAsync(object? parameter, CancellationToken cancellationToken)
+    {
+        if (_isScanning)
+        {
+            _scanCts?.Cancel();
+            StatusText = "Cancelling...";
+            return;
+        }
+
+        _scanCts?.Dispose();
+        _scanCts = new CancellationTokenSource();
+        await ExecuteAnalyseAsync(null, _scanCts.Token);
+    }
+
     private async Task ExecuteAnalyseAsync(object? parameter, CancellationToken cancellationToken)
     {
         IsScanning = true;
@@ -843,10 +905,13 @@ public class BindingRedirectToolWindowViewModel : NotifyPropertyChangedObject
 
             if (!projects.Any())
             {
+                _hasSolution = false;
                 _lastSolutionFingerprint = string.Empty;
-                StatusText = "No projects found in the current solution.";
+                StatusText = "Waiting for a solution to be opened...";
                 return;
             }
+
+            _hasSolution = true;
 
             // Update solution fingerprint so the monitor knows this solution was analysed
             _lastSolutionFingerprint = string.Join("|",
