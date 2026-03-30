@@ -67,7 +67,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
 
         Issues = [];
         Projects = ["All Projects"];
-        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Deprecated", "OK"];
+        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Orphaned .NET (Core)", "Orphaned .NET Framework", "Deprecated", "OK"];
 
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
         RefreshCommand = new AsyncCommand(ExecuteRefreshAsync);
@@ -182,6 +182,11 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                 LoadConfigSnippet();
                 RaiseNotifyPropertyChangedEvent(nameof(DetailPanelVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(ActionButtonVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(DeprecatedWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(OrphanedWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(OrphanedFrameworkWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(OrphanedWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(OrphanedFrameworkWarningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(FixChangeLogVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(ConfigSnippetVisibility));
             }
@@ -385,6 +390,24 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
     [DataMember]
     public string ActionButtonVisibility =>
         _selectedIssue is not null && _selectedIssue.HasAction ? "Visible" : "Collapsed";
+
+    /// <summary>WPF Visibility for the deprecated removal warning in the detail panel.</summary>
+    [DataMember]
+    public string DeprecatedWarningVisibility =>
+        _selectedIssue is not null && _selectedIssue.Status == RedirectStatus.Deprecated && _selectedIssue.HasAction
+            ? "Visible" : "Collapsed";
+
+    /// <summary>WPF Visibility for the ORPHANED warning (.NET Core — safe to remove).</summary>
+    [DataMember]
+    public string OrphanedWarningVisibility =>
+        _selectedIssue is not null && _selectedIssue.Status == RedirectStatus.Orphaned
+            ? "Visible" : "Collapsed";
+
+    /// <summary>WPF Visibility for the ORPHANED FW warning (.NET Framework — verify GAC/post-build).</summary>
+    [DataMember]
+    public string OrphanedFrameworkWarningVisibility =>
+        _selectedIssue is not null && _selectedIssue.Status == RedirectStatus.OrphanedFramework
+            ? "Visible" : "Collapsed";
 
     private string _feedbackText = string.Empty;
     private string _fixChangeLog = string.Empty;
@@ -997,6 +1020,11 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
             if (_createBackup) _configPatcher.CreateBackup(configPath);
 
             string targetVersion = model.EffectiveTargetVersion ?? string.Empty;
+            bool isDeprecatedRemoval = model.Status == RedirectStatus.Deprecated
+                && model.SuggestedAction == FixAction.RemoveRedirect;
+            bool isOrphanedRemoval = model.Status is RedirectStatus.Orphaned or RedirectStatus.OrphanedFramework
+                && model.SuggestedAction == FixAction.RemoveRedirect;
+
             bool success = model.SuggestedAction switch
             {
                 FixAction.UpdateRedirect => _configPatcher.UpdateRedirect(
@@ -1035,7 +1063,18 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                 SelectedIssue.MarkAsFixed(fixedVersion);
 
                 // Build change log
-                FixChangeLog = actionVerb == "Removed"
+                FixChangeLog = isDeprecatedRemoval
+                    ? $"File: {configPath}\n"
+                        + $"Removed binding redirect for deprecated package {model.Name}.\n"
+                        + $"  (was: newVersion=\"{oldVersion}\")\n"
+                        + $"  The package is deprecated \u2014 verify that '{model.Name}' is no longer\n"
+                        + $"  referenced as a NuGet package in this project."
+                    : isOrphanedRemoval
+                    ? $"File: {configPath}\n"
+                        + $"Removed orphaned binding redirect for {model.Name}.\n"
+                        + $"  (was: newVersion=\"{oldVersion}\")\n"
+                        + $"  No resolved or physical DLL was found."
+                    : actionVerb == "Removed"
                     ? $"File: {configPath}\n"
                         + $"Removed binding redirect for {model.Name}.\n"
                         + $"  (was: newVersion=\"{oldVersion}\")\n"
@@ -1061,6 +1100,9 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                 // Refresh detail panel visibility (action button should hide)
                 RaiseNotifyPropertyChangedEvent(nameof(DetailPanelVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(ActionButtonVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(DeprecatedWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(OrphanedWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(OrphanedFrameworkWarningVisibility));
 
                 // Update status bar counts
                 int issueCount = Issues.Count(i => i.Status != RedirectStatus.OK);
@@ -1226,6 +1268,8 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
             "Duplicate" => filtered.Where(r => r.Status == RedirectStatus.Duplicate),
             "Conflict" => filtered.Where(r => r.Status == RedirectStatus.Conflict),
             "Token Lost" => filtered.Where(r => r.Status == RedirectStatus.TokenLost),
+            "Orphaned .NET (Core)" => filtered.Where(r => r.Status == RedirectStatus.Orphaned),
+            "Orphaned .NET Framework" => filtered.Where(r => r.Status == RedirectStatus.OrphanedFramework),
             "Deprecated" => filtered.Where(r => r.Status == RedirectStatus.Deprecated),
             "OK" => filtered.Where(r => r.Status == RedirectStatus.OK),
             _ => filtered // "All"
@@ -1292,6 +1336,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         ActionLabel = model.ActionLabel;
         ResolvedCellStatus = model.ResolvedCellStatus;
         PhysicalCellStatus = model.PhysicalCellStatus;
+        IsNetFramework = model.IsNetFramework;
         ConfigCellStatus = model.ConfigCellStatus;
     }
 
@@ -1315,6 +1360,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
     [DataMember] public string ActionLabel { get; set; }
     [DataMember] public string ResolvedCellStatus { get; set; }
     [DataMember] public string PhysicalCellStatus { get; set; }
+    [DataMember] public bool IsNetFramework { get; set; }
     [DataMember] public string ConfigCellStatus { get; set; }
 
     /// <summary>Combined status icon + text for display in the grid.</summary>
@@ -1328,6 +1374,8 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Mismatch => "MISMATCH",
         RedirectStatus.TokenLost => "TOKEN LOST",
         RedirectStatus.Deprecated => "DEPRECATED",
+        RedirectStatus.Orphaned => "ORPHANED .NET (Core)",
+        RedirectStatus.OrphanedFramework => "ORPHANED .NET Framework",
         RedirectStatus.OK => "OK",
         _ => ""
     }}";
@@ -1343,6 +1391,8 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Mismatch => "MISMATCH",
         RedirectStatus.TokenLost => "TOKEN LOST",
         RedirectStatus.Deprecated => "DEPRECATED",
+        RedirectStatus.Orphaned => "ORPHANED .NET (Core)",
+        RedirectStatus.OrphanedFramework => "ORPHANED .NET Framework",
         RedirectStatus.OK => "OK",
         _ => ""
     };

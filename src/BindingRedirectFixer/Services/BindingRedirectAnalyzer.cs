@@ -1,4 +1,5 @@
 using BindingRedirectFixer.Models;
+using System.Xml.Linq;
 
 namespace BindingRedirectFixer.Services;
 
@@ -33,9 +34,15 @@ public sealed class BindingRedirectAnalyzer
 
         try
         {
-            // Step 1: Detect project type
+            // Step 1: Detect project type and target framework
             bool isPackagesConfig = File.Exists(
                 Path.Combine(projectDirectory, "packages.config"));
+            bool isNetFramework = isPackagesConfig; // packages.config is always .NET Framework
+
+            if (!isNetFramework)
+            {
+                isNetFramework = DetectNetFramework(projectDirectory);
+            }
 
             // Step 2: Create appropriate version resolver
             IVersionResolver resolver = isPackagesConfig
@@ -92,7 +99,8 @@ public sealed class BindingRedirectAnalyzer
                 var entry = new AssemblyRedirectInfo
                 {
                     ProjectName = projectName,
-                    Name = assemblyName
+                    Name = assemblyName,
+                    IsNetFramework = isNetFramework
                 };
 
                 // Populate resolved version info
@@ -167,7 +175,7 @@ public sealed class BindingRedirectAnalyzer
     /// <param name="entry">The assembly info entry to evaluate.</param>
     /// <param name="hasVersionConflict">Whether the missing redirect detector flagged this assembly.</param>
     /// <param name="hasDuplicateRedirects">Whether the config file has multiple entries for this assembly.</param>
-    private static void EvaluateStatus(AssemblyRedirectInfo entry, bool hasVersionConflict, bool hasDuplicateRedirects)
+    internal static void EvaluateStatus(AssemblyRedirectInfo entry, bool hasVersionConflict, bool hasDuplicateRedirects)
     {
         string? target = entry.EffectiveTargetVersion;
 
@@ -179,7 +187,9 @@ public sealed class BindingRedirectAnalyzer
                 $"'{entry.Name}' is deprecated. Migrate to '{deprecation!.ReplacementPackage}' " +
                 "instead of fixing the binding redirect." +
                 (deprecation.MigrationUrl is not null ? $" See: {deprecation.MigrationUrl}" : "");
-            entry.SuggestedAction = FixAction.None;
+            entry.SuggestedAction = !string.IsNullOrEmpty(entry.CurrentRedirectVersion)
+                ? FixAction.RemoveRedirect
+                : FixAction.None;
             return;
         }
 
@@ -242,19 +252,41 @@ public sealed class BindingRedirectAnalyzer
             // Preserve the config token for any subsequent fix operations
             entry.PublicKeyToken = entry.ConfigPublicKeyToken;
 
+            bool hasDll = !string.IsNullOrEmpty(entry.ResolvedAssemblyVersion) ||
+                !string.IsNullOrEmpty(entry.PhysicalVersion);
             bool versionNeedsUpdate = !string.IsNullOrEmpty(target) &&
                 !string.Equals(entry.CurrentRedirectVersion, target, StringComparison.OrdinalIgnoreCase);
 
-            entry.Status = RedirectStatus.TokenLost;
-            entry.DiagnosticMessage =
-                $"The resolved assembly for '{entry.Name}' has no public key token (unsigned), " +
-                $"but the config file has publicKeyToken=\"{entry.ConfigPublicKeyToken}\". " +
-                "This usually means the NuGet package resolved an unsigned build of the assembly. " +
-                $"The original token will be preserved." +
-                (versionNeedsUpdate
-                    ? $" The redirect version also needs updating from {entry.CurrentRedirectVersion} to {target}."
-                    : string.Empty);
-            entry.SuggestedAction = versionNeedsUpdate ? FixAction.UpdateRedirect : FixAction.None;
+            if (!hasDll)
+            {
+                // No DLL found anywhere — redirect is orphaned
+                entry.Status = entry.IsNetFramework
+                    ? RedirectStatus.OrphanedFramework
+                    : RedirectStatus.Orphaned;
+                entry.DiagnosticMessage = entry.IsNetFramework
+                    ? $"No resolved or physical DLL was found for '{entry.Name}'. " +
+                      $"The config file has publicKeyToken=\"{entry.ConfigPublicKeyToken}\". " +
+                      "The binding redirect is likely orphaned. Verify the assembly is not loaded from " +
+                      "the GAC, deployed by a post-build step, or required by a signed dependency."
+                    : $"No resolved or physical DLL was found for '{entry.Name}'. " +
+                      $"The config file has publicKeyToken=\"{entry.ConfigPublicKeyToken}\". " +
+                      "The binding redirect is orphaned \u2014 .NET (Core) does not use binding redirects.";
+                entry.SuggestedAction = FixAction.RemoveRedirect;
+            }
+            else
+            {
+                entry.Status = RedirectStatus.TokenLost;
+                // DLL exists but is unsigned — redirect is still needed
+                entry.DiagnosticMessage =
+                    $"The resolved assembly for '{entry.Name}' has no public key token (unsigned), " +
+                    $"but the config file has publicKeyToken=\"{entry.ConfigPublicKeyToken}\". " +
+                    "This usually means the NuGet package resolved an unsigned build of the assembly. " +
+                    $"The original token will be preserved." +
+                    (versionNeedsUpdate
+                        ? $" The redirect version also needs updating from {entry.CurrentRedirectVersion} to {target}."
+                        : string.Empty);
+                entry.SuggestedAction = versionNeedsUpdate ? FixAction.UpdateRedirect : FixAction.None;
+            }
             return;
         }
 
@@ -328,5 +360,76 @@ public sealed class BindingRedirectAnalyzer
         entry.Status = RedirectStatus.OK;
         entry.DiagnosticMessage = string.Empty;
         entry.SuggestedAction = FixAction.None;
+    }
+
+    /// <summary>
+    /// Detects whether the project targets .NET Framework by reading the target framework
+    /// from the <c>.csproj</c> file. Checks <c>TargetFramework</c>, <c>TargetFrameworks</c>
+    /// (multi-target), and legacy <c>TargetFrameworkVersion</c>.
+    /// For multi-target projects, returns true if ANY target is .NET Framework.
+    /// </summary>
+    internal static bool DetectNetFramework(string projectDirectory)
+    {
+        try
+        {
+            // Find the .csproj file in the project directory
+            string[] csprojFiles = Directory.GetFiles(projectDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
+            if (csprojFiles.Length == 0)
+            {
+                return false;
+            }
+
+            string csprojContent = File.ReadAllText(csprojFiles[0]);
+
+            // Legacy non-SDK projects use <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+            if (csprojContent.Contains("<TargetFrameworkVersion>", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // SDK-style: extract TargetFramework or TargetFrameworks value
+            var doc = System.Xml.Linq.XDocument.Parse(csprojContent);
+            XNamespace ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+            // Check <TargetFrameworks> (multi-target, semicolon-separated)
+            string? frameworks = doc.Descendants(ns + "TargetFrameworks").FirstOrDefault()?.Value;
+            if (!string.IsNullOrEmpty(frameworks))
+            {
+                return frameworks.Split(';').Any(IsFrameworkTfm);
+            }
+
+            // Check <TargetFramework> (single target)
+            string? framework = doc.Descendants(ns + "TargetFramework").FirstOrDefault()?.Value;
+            if (!string.IsNullOrEmpty(framework))
+            {
+                return IsFrameworkTfm(framework);
+            }
+        }
+        catch
+        {
+            // Parse error — assume modern .NET
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Returns true if the TFM string represents .NET Framework (net48, net472, net461, etc.)
+    /// as opposed to modern .NET (net5.0, net6.0, net8.0, net10.0, netcoreapp3.1, netstandard2.0).
+    /// </summary>
+    private static bool IsFrameworkTfm(string tfm)
+    {
+        tfm = tfm.Trim().ToLowerInvariant();
+
+        // Modern .NET: net5.0, net6.0-windows, net8.0, net10.0, etc. (always has a dot)
+        // .NET Core: netcoreapp2.1, netcoreapp3.1
+        // .NET Standard: netstandard2.0, netstandard2.1
+        if (tfm.Contains('.') || tfm.StartsWith("netcoreapp") || tfm.StartsWith("netstandard"))
+        {
+            return false;
+        }
+
+        // .NET Framework: net48, net472, net461, net45, net40, net35, etc. (no dot, starts with "net")
+        return tfm.StartsWith("net");
     }
 }

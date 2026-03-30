@@ -29,7 +29,13 @@ public enum RedirectStatus
     TokenLost,
 
     /// <summary>The package is deprecated and should be replaced with a modern equivalent.</summary>
-    Deprecated
+    Deprecated,
+
+    /// <summary>No DLL found for this assembly in a .NET (Core) project. The binding redirect is orphaned and safe to remove.</summary>
+    Orphaned,
+
+    /// <summary>No DLL found for this assembly in a .NET Framework project. The binding redirect is likely orphaned but GAC/post-build should be verified.</summary>
+    OrphanedFramework
 }
 
 /// <summary>
@@ -103,6 +109,10 @@ public class AssemblyRedirectInfo
     [DataMember]
     public string? CurrentRedirectVersion { get; set; }
 
+    /// <summary>Whether the project targets .NET Framework (net48, etc.) as opposed to modern .NET.</summary>
+    [DataMember]
+    public bool IsNetFramework { get; set; }
+
     /// <summary>Evaluated status of this binding redirect.</summary>
     [DataMember]
     public RedirectStatus Status { get; set; } = RedirectStatus.OK;
@@ -157,6 +167,8 @@ public class AssemblyRedirectInfo
         RedirectStatus.Mismatch => "\u26A0",
         RedirectStatus.TokenLost => "\u26A0",
         RedirectStatus.Deprecated => "\u26D4",
+        RedirectStatus.Orphaned => "\u26A0",
+        RedirectStatus.OrphanedFramework => "\u26A0",
         _ => ""
     };
 

@@ -11,7 +11,7 @@
     <VssdkCompatibleExtension>false</VssdkCompatibleExtension>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.1.7</Version>
+    <Version>0.2.0</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>
@@ -31,6 +31,10 @@
     <PackageReference Include="NuGet.ProjectModel" Version="7.3.0" />
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.5" />
     <PackageReference Include="Ardimedia.VsExtensions.Common" Version="1.0.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="BindingRedirectFixer.Tests" />
   </ItemGroup>
 
   <ItemGroup>

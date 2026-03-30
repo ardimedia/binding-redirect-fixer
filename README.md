@@ -22,7 +22,9 @@ Tracking down which redirects are wrong and what versions they should point to i
   4. Config redirect (what the runtime uses)
 - **One-Click Fix** -- update stale redirects, add missing ones, or rebuild projects with conflicting bin/ output
 - **Fix All** -- batch-fix all detected issues in a single click
-- **Deprecated Package Detection** -- flags packages like `Microsoft.Azure.Services.AppAuthentication` with migration guidance instead of fixing their redirects
+- **Deprecated Package Detection** -- flags packages like `Microsoft.Azure.Services.AppAuthentication` with migration guidance and offers removal with a warning
+- **Orphaned Redirect Detection** -- detects binding redirects with no DLL on disk, distinguishes .NET (Core) (safe to remove) from .NET Framework (verify GAC first)
+- **Framework Detection** -- reads target framework from `.csproj` to provide framework-specific guidance
 - **Supports Both Project Types** -- works with PackageReference and `packages.config` projects
 - **Resizable & Sortable Columns** -- drag column borders to resize, click headers to sort ascending/descending
 - **Educational UI** -- a built-in Learn tab explains what binding redirects are, why they break, and how this tool resolves them
@@ -71,8 +73,10 @@ The extension reads assembly versions from multiple sources and compares them:
 | **CONFLICT** | Config is correct but the bin/ DLL is outdated | Triggers a clean rebuild |
 | **DUPLICATE** | Multiple redirects exist for the same assembly | Removes the duplicate entry |
 | **MISMATCH** | Redirect targets a version not available on disk (bin/ DLL is older than NuGet resolved) | Removes the redirect so the runtime loads the bin/ DLL directly |
-| **TOKEN LOST** | Resolved assembly has no public key token but config expects one (unsigned build) | Preserves token, updates version if needed |
-| **DEPRECATED** | Package is deprecated and should be replaced with a modern equivalent (e.g., `AppAuthentication` -> `Azure.Identity`) | Skipped -- requires manual migration |
+| **TOKEN LOST** | DLL exists but is unsigned while config expects a public key token | Preserves token, updates version if needed |
+| **DEPRECATED** | Package is deprecated and should be replaced with a modern equivalent (e.g., `AppAuthentication` -> `Azure.Identity`) | Removes redirect (with warning to check NuGet refs) |
+| **ORPHANED .NET (Core)** | No DLL found in a .NET (Core) project -- redirect is orphaned | Removes the redirect (safe) |
+| **ORPHANED .NET Framework** | No DLL found in a .NET Framework project -- redirect is likely orphaned | Removes the redirect (verify GAC/post-build first) |
 
 ### Package Version vs Assembly Version
 

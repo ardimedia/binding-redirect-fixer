@@ -69,6 +69,13 @@
                 </Setter>
             </Style>
 
+            <!-- ======== GridView Column Header (stretch content so buttons fill the full header area) ======== -->
+            <Style TargetType="GridViewColumnHeader">
+                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                <Setter Property="VerticalContentAlignment" Value="Stretch" />
+                <Setter Property="Padding" Value="6,3" />
+            </Style>
+
             <!-- ======== Themed ComboBox (full template to control popup background) ======== -->
             <Style TargetType="ComboBox">
                 <Setter Property="Foreground" Value="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}" />
@@ -268,7 +275,7 @@
                           SelectedItem="{Binding SelectedStatus}"
                           MinWidth="110"
                           Margin="0,0,12,4" />
-                <Button Content="{Binding AnalyseButtonLabel}" Command="{Binding StartAnalyseCommand}"
+                <Button Content="Analyse" Command="{Binding StartAnalyseCommand}"
                         Visibility="{Binding AnalyseButtonVisibility}"
                         Padding="10,3" Margin="0,0,4,4" />
                 <Button Content="Cancel Analyse" Command="{Binding CancelAnalyseCommand}"
@@ -310,7 +317,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Column="0"
-                               Text="STALE = redirect version outdated. MISSING = redirect should be added. DEPRECATED = package should be replaced with a modern equivalent. Select a row for details."
+                               Text="STALE = redirect version outdated. MISSING = redirect should be added. ORPHANED = no DLL found, safe to remove. DEPRECATED = package should be replaced with a modern equivalent. Select a row for details."
                                TextWrapping="Wrap" FontSize="11" Opacity="0.85" />
                     <Button Grid.Column="1" Content="X"
                             Command="{Binding DismissInfoBarCommand}"
@@ -342,7 +349,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Project"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Project" FontWeight="Bold" />
                                             <TextBlock Text="{Binding DataContext.SortIndicatorProject, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
@@ -354,7 +361,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Assembly"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Assembly" FontWeight="Bold" />
                                             <TextBlock Text="{Binding DataContext.SortIndicatorAssembly, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
@@ -371,7 +378,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Resolved"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                                             ToolTip="Assembly Version from NuGet Cache — Read from the actual DLL that NuGet's dependency resolver selected. Combined with bin/ DLL to determine the effective redirect target (highest wins).">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Resolved" FontWeight="Bold" />
@@ -384,7 +391,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Requested"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                                             ToolTip="Package Version — Declared in PackageReference or packages.config. May differ from resolved due to version ranges or transitive dependencies. Informational only.">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Requested" FontWeight="Bold" />
@@ -402,7 +409,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="BinDll"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                                             ToolTip="Physical DLL on Disk — Can be stale after incomplete builds or failed cleans. A mismatch signals a build problem, not a redirect problem.">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="bin/ DLL" FontWeight="Bold" />
@@ -415,7 +422,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Config"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0"
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" VerticalContentAlignment="Center"
                                             ToolTip="Current Binding Redirect — What the runtime uses now. Should match MAX(Resolved, bin/ DLL) for correct operation.">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Config" FontWeight="Bold" />
@@ -428,7 +435,7 @@
                                 <GridViewColumn.Header>
                                     <Button Command="{Binding DataContext.SortCommand, RelativeSource={RelativeSource AncestorType=ListView}}"
                                             CommandParameter="Status"
-                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left">
+                                            Style="{StaticResource ChromelessButton}" Cursor="Hand" Padding="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" HorizontalContentAlignment="Left" VerticalContentAlignment="Center">
                                         <StackPanel Orientation="Horizontal">
                                             <TextBlock Text="Status" FontWeight="Bold" />
                                             <TextBlock Text="{Binding DataContext.SortIndicatorStatus, RelativeSource={RelativeSource AncestorType=ListView}}" FontSize="9" VerticalAlignment="Center" />
@@ -539,6 +546,30 @@
                             </Border>
                         </Grid>
 
+                        <!-- Deprecated removal warning -->
+                        <Border Visibility="{Binding DeprecatedWarningVisibility}"
+                                Background="#3CFFC107" BorderBrush="#FFC107" BorderThickness="1"
+                                CornerRadius="3" Padding="10,8" Margin="0,0,0,8">
+                            <TextBlock TextWrapping="Wrap" FontSize="11.5" Opacity="0.9"
+                                       Text="Before removing this redirect, verify that the deprecated package is no longer referenced as a NuGet package in this project. If it is still referenced, consider replacing it with the recommended successor package first." />
+                        </Border>
+
+                        <!-- Orphaned warning — .NET (Core): safe to remove -->
+                        <Border Visibility="{Binding OrphanedWarningVisibility}"
+                                Background="#3C4CAF50" BorderBrush="#4CAF50" BorderThickness="1"
+                                CornerRadius="3" Padding="10,8" Margin="0,0,0,8">
+                            <TextBlock TextWrapping="Wrap" FontSize="11.5" Opacity="0.9"
+                                       Text="This is a .NET (Core) project. No resolved or physical DLL was found for this assembly. The binding redirect is orphaned &#x2014; .NET (Core) does not use binding redirects. Safe to remove." />
+                        </Border>
+
+                        <!-- Orphaned FW warning — .NET Framework: verify before removing -->
+                        <Border Visibility="{Binding OrphanedFrameworkWarningVisibility}"
+                                Background="#3CFFC107" BorderBrush="#FFC107" BorderThickness="1"
+                                CornerRadius="3" Padding="10,8" Margin="0,0,0,8">
+                            <TextBlock TextWrapping="Wrap" FontSize="11.5" Opacity="0.9"
+                                       Text="This is a .NET Framework project. No resolved or physical DLL was found for this assembly. The binding redirect is likely orphaned, but verify the assembly is not loaded from the GAC, deployed by a post-build step, or required by a signed dependency &#x2014; removing the redirect in those cases can cause runtime binding failures." />
+                        </Border>
+
                         <Button Content="{Binding SelectedIssue.ActionLabel}"
                                 Command="{Binding FixSelectedCommand}"
                                 Padding="18,5"
@@ -604,61 +635,109 @@
                 <TextBlock Text="Common Scenarios"
                            FontSize="18" FontWeight="Bold" Margin="0,0,0,12" />
 
-                <!-- STALE Card -->
-                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
-                    <StackPanel>
-                        <TextBlock Text="STALE  —  Redirect Version Mismatch" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
-                                   Text="The binding redirect does not match the effective target version (= highest of NuGet resolved and bin/ DLL). This happens after a NuGet update, a rebuild with a newer DLL, or when bin/ contains a version higher than what NuGet resolved." />
-                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Update Redirect]" />
-                    </StackPanel>
-                </Border>
+                <!-- ── Red (error / action required) ── -->
 
-                <!-- MISSING Card -->
+                <!-- CONFLICT Card -->
                 <Border BorderBrush="#E05050" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
                     <StackPanel>
-                        <TextBlock Text="MISSING  —  New Transitive Dependency" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
+                        <TextBlock Text="CONFLICT  &#x2014;  Analysis Error" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
-                                   Text="A package you installed depends on another package that is also used by a different package at a different version. There is no binding redirect to resolve the conflict." />
-                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Add Redirect]" />
+                                   Text="The analysis of one or more assemblies in this project failed due to an unexpected error (e.g. a corrupted DLL, inaccessible NuGet cache path, or a file locked by another process). The diagnostic message shows the error details." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="No automatic fix available. Resolve the underlying issue and re-analyse." />
                     </StackPanel>
                 </Border>
 
-                <!-- MISMATCH Card -->
-                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                <!-- DEPRECATED Card -->
+                <Border BorderBrush="#E05050" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
                     <StackPanel>
-                        <TextBlock Text="MISMATCH  —  Redirect Targets Missing Version" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock Text="DEPRECATED  &#x2014;  Package Replaced by Modern Equivalent" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
-                                   Text="The binding redirect targets a version that is not available on disk. This happens with .NET Framework assemblies (e.g. System.ServiceModel.*) where a cross-platform NuGet package provides assembly version 10.0.0.0 but the actual DLL in bin/ is an older framework version (e.g. 8.1.2.0). The redirect tells the runtime to load 10.0.0.0 which doesn't exist." />
+                                   Text="The NuGet package is deprecated and has an official successor (e.g. Microsoft.Azure.Services.AppAuthentication &#x2192; Azure.Identity). Fixing the binding redirect is not the right action &#x2014; the package itself should be replaced." />
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
-                                   Text="The fix is to remove the redirect entry entirely. Without a redirect, the runtime simply loads whatever DLL is in bin/ — which is the correct framework version." />
-                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Remove Redirect]" />
+                                   Text="If the deprecated package is still referenced as a NuGet dependency, replace it with the recommended successor first. If it has already been removed and only the binding redirect remains, the redirect can be safely deleted." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="If a binding redirect exists, the tool offers [Remove Redirect] with a warning to check NuGet references first" />
                     </StackPanel>
                 </Border>
 
                 <!-- DUPLICATE Card -->
                 <Border BorderBrush="#E05050" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
                     <StackPanel>
-                        <TextBlock Text="DUPLICATE  —  Multiple Redirect Entries" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
+                        <TextBlock Text="DUPLICATE  &#x2014;  Multiple Redirect Entries" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
                                    Text="The config file contains more than one binding redirect entry for the same assembly. This can happen after merging branches or manual edits. Only one entry per assembly should exist." />
-                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Remove Duplicate] — keeps one entry with the correct version" />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Remove Duplicate] &#x2014; keeps one entry with the correct version" />
+                    </StackPanel>
+                </Border>
+
+                <!-- MISSING Card -->
+                <Border BorderBrush="#E05050" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="MISSING  &#x2014;  New Transitive Dependency" FontSize="13" FontWeight="Bold" Foreground="#E05050" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="A package you installed depends on another package that is also used by a different package at a different version. There is no binding redirect to resolve the conflict." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Add Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Amber (warning / verify) ── -->
+
+                <!-- MISMATCH Card -->
+                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="MISMATCH  &#x2014;  Redirect Targets Missing Version" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The binding redirect targets a version that is not available on disk. This happens with .NET Framework assemblies (e.g. System.ServiceModel.*) where a cross-platform NuGet package provides assembly version 10.0.0.0 but the actual DLL in bin/ is an older framework version (e.g. 8.1.2.0). The redirect tells the runtime to load 10.0.0.0 which doesn't exist." />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The fix is to remove the redirect entry entirely. Without a redirect, the runtime simply loads whatever DLL is in bin/ &#x2014; which is the correct framework version." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Remove Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ORPHANED .NET Framework Card -->
+                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="ORPHANED .NET Framework  &#x2014;  No DLL Found" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="No resolved or physical DLL was found for this assembly in a .NET Framework project. The binding redirect is likely orphaned, but in .NET Framework the assembly could be loaded from the GAC, deployed by a post-build step, or required by a signed dependency." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="Likely safe to remove, but verify first. The tool offers [Remove Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- STALE Card -->
+                <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="STALE  &#x2014;  Redirect Version Mismatch" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="The binding redirect does not match the effective target version (= highest of NuGet resolved and bin/ DLL). This happens after a NuGet update, a rebuild with a newer DLL, or when bin/ contains a version higher than what NuGet resolved." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The tool detects this and offers [Update Redirect]" />
                     </StackPanel>
                 </Border>
 
                 <!-- TOKEN LOST Card -->
                 <Border BorderBrush="#D4A030" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
                     <StackPanel>
-                        <TextBlock Text="TOKEN LOST  —  Public Key Token Dropped" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
+                        <TextBlock Text="TOKEN LOST  &#x2014;  Public Key Token Dropped" FontSize="13" FontWeight="Bold" Foreground="#D4A030" Margin="0,0,0,6" />
                         <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
-                                   Text="The config file has a non-empty publicKeyToken for this assembly, but the NuGet-resolved DLL is unsigned (empty token). This can happen when a NuGet package ships an unsigned preview/RC build, when the wrong target framework is resolved, or when a locally-built DLL replaced the NuGet-restored one." />
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
-                                   Text="Writing an empty publicKeyToken to the config would break runtime assembly loading because the CLR cannot match the empty token to the original strong-named reference. The tool preserves the original token from the config file." />
-                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="The original token is preserved. If the version also changed, the tool offers [Update Redirect]" />
+                                   Text="The DLL exists but is unsigned (empty public key token), while the config file has a non-empty publicKeyToken. This happens when a NuGet package ships an unsigned build (preview/RC, wrong TFM, or the package author dropped strong naming). The redirect is still needed at runtime. Writing an empty publicKeyToken would break assembly loading, so the tool preserves the original token from the config." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="No action needed. If the redirect version also changed, the tool offers [Update Redirect]" />
                     </StackPanel>
                 </Border>
 
-                <!-- Version Mismatch Info Card -->
+                <!-- ── Green (safe to remove) ── -->
+
+                <!-- ORPHANED .NET (Core) Card -->
+                <Border BorderBrush="#4CAF50" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,12" Padding="14,10" Background="Transparent">
+                    <StackPanel>
+                        <TextBlock Text="ORPHANED .NET (Core)  &#x2014;  No DLL Found" FontSize="13" FontWeight="Bold" Foreground="#4CAF50" Margin="0,0,0,6" />
+                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,6" Opacity="0.85"
+                                   Text="No resolved or physical DLL was found for this assembly in a .NET (Core) project. The binding redirect is orphaned &#x2014; .NET (Core) does not use binding redirects at all. The NuGet package was likely removed but the config entry was left behind." />
+                        <TextBlock FontSize="11" Opacity="0.55" FontStyle="Italic" Text="Safe to remove. The tool offers [Remove Redirect]" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ── Blue (informational) ── -->
+
+                <!-- OK Info Card -->
                 <Border BorderBrush="#5090E0" BorderThickness="0,0,0,3" CornerRadius="4" Margin="0,0,0,24" Padding="14,10" Background="Transparent">
                     <StackPanel>
                         <TextBlock Text="OK (informational)  —  bin/ Version Differs" FontSize="13" FontWeight="Bold" Foreground="#5090E0" Margin="0,0,0,6" />

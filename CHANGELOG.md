@@ -5,6 +5,31 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-03-30
+
+### Added
+
+- **ORPHANED .NET (Core)** status: no DLL found in a .NET (Core) project, binding redirect is orphaned and safe to remove (green)
+- **ORPHANED .NET Framework** status: no DLL found in a .NET Framework project, likely orphaned but verify GAC/post-build (amber)
+- Remove Redirect action for DEPRECATED items with warning to check NuGet references first
+- Remove Redirect action for ORPHANED items (both .NET and .NET Framework)
+- Framework detection from `.csproj` (reads `TargetFramework`, `TargetFrameworks`, `TargetFrameworkVersion`)
+- Framework-aware detail panel warnings: green for .NET (Core), amber for .NET Framework
+- CONFLICT, DEPRECATED, ORPHANED .NET (Core), ORPHANED .NET Framework cards in Background tab
+- Status filter entries for "Orphaned .NET (Core)" and "Orphaned .NET Framework" for targeted batch fixes
+- Test project with 55 unit tests (EvaluateStatus rules, ConfigPatcher, DeprecatedPackageRegistry, DetectNetFramework)
+
+### Changed
+
+- TOKEN LOST now only applies when DLL is present but unsigned (redirect still needed); no-DLL cases are now ORPHANED
+- Background tab cards sorted by severity (red > amber > green > blue), then alphabetically
+- Info bar updated to mention ORPHANED status
+
+### Fixed
+
+- Empty Analyse button text after cancellation (was binding to a removed property)
+- Column header click area: sorting now works on the full header cell, not just the text label
+
 ## [0.1.7] - 2026-03-25
 
 ### Added
