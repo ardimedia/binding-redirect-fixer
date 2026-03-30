@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.1] - 2026-03-30
 
+### Added
+
+- Parallel project scanning using `Parallel.ForEachAsync` with up to 5 concurrent projects (issue #3)
+- Progress indicator shows "Analysing 3 of 12: ProjectName..." during parallel scan
+- Better empty state message when no relevant projects found (issue #2)
+
 ### Changed
 
 - Update project description and marketplace overview to mention .NET (Core) support

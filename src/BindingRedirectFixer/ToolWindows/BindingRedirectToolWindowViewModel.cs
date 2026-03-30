@@ -738,13 +738,11 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
 
             _hasSolution = true;
 
-            int projectCount = 0;
-            int totalIssues = 0;
+            // Build list of relevant projects (have config file, packages.config, or project.assets.json)
+            var relevantProjects = new List<(string Name, string Directory)>();
 
             foreach (var project in projects)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 string projectPath = project.Path ?? string.Empty;
                 string projectName = project.Name ?? Path.GetFileNameWithoutExtension(projectPath);
 
@@ -759,8 +757,6 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                     continue;
                 }
 
-                // Only analyse projects that have a config file (web.config/app.config)
-                // or packages.config — these are .NET Framework projects that use binding redirects
                 bool hasConfig = _configPatcher.GetConfigFilePath(projectDirectory) is not null;
                 bool hasPackagesConfig = File.Exists(Path.Combine(projectDirectory, "packages.config"));
                 bool hasAssetsJson = File.Exists(Path.Combine(projectDirectory, "obj", "project.assets.json"));
@@ -770,22 +766,55 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                     continue;
                 }
 
-                _projectDirectories[projectName] = projectDirectory;
-                Projects.Add(projectName);
-                projectCount++;
-
-                StatusText = $"Analysing {projectName}...";
-
-                var results = await _analyzer.AnalyzeProjectAsync(
-                    projectName, projectDirectory, cancellationToken).ConfigureAwait(false);
-
-                _allResults.AddRange(results);
-                totalIssues += results.Count(r => r.Status != RedirectStatus.OK);
+                relevantProjects.Add((projectName, projectDirectory));
             }
+
+            if (relevantProjects.Count == 0)
+            {
+                ApplyFilters();
+                StatusText = "No projects with binding redirects found. This extension works with projects that have web.config or app.config files.";
+                return;
+            }
+
+            // Register all project names upfront (ObservableList is not thread-safe)
+            foreach (var (name, directory) in relevantProjects)
+            {
+                _projectDirectories[name] = directory;
+                Projects.Add(name);
+            }
+
+            int totalProjects = relevantProjects.Count;
+            int projectCount = 0;
+            int totalIssues = 0;
+            object lockObj = new();
+
+            // Scan projects in parallel
+            await Parallel.ForEachAsync(
+                relevantProjects,
+                new ParallelOptions
+                {
+                    MaxDegreeOfParallelism = 5,
+                    CancellationToken = cancellationToken,
+                },
+                async (project, ct) =>
+                {
+                    int current = Interlocked.Increment(ref projectCount);
+                    StatusText = $"Analysing {current} of {totalProjects}: {project.Name}...";
+
+                    var results = await _analyzer.AnalyzeProjectAsync(
+                        project.Name, project.Directory, ct).ConfigureAwait(false);
+
+                    int issues = results.Count(r => r.Status != RedirectStatus.OK);
+                    lock (lockObj)
+                    {
+                        _allResults.AddRange(results);
+                        Interlocked.Add(ref totalIssues, issues);
+                    }
+                }).ConfigureAwait(false);
 
             // Apply current filters (default: "Issues Only" hides OK entries)
             ApplyFilters();
-            StatusText = $"Analysis complete. {projectCount} project(s) scanned, {totalIssues} issue(s) found.";
+            StatusText = $"Analysis complete. {totalProjects} project(s) scanned, {totalIssues} issue(s) found.";
         }
         catch (OperationCanceledException)
         {

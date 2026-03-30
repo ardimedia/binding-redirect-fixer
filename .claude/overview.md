@@ -24,6 +24,7 @@ Tracking down which redirects are wrong and what versions they should point to i
 - **Orphaned Redirect Detection** -- detects binding redirects with no DLL on disk, distinguishes .NET (Core) (safe to remove) from .NET Framework (verify GAC first)
 - **Framework Detection** -- reads target framework from `.csproj` to provide framework-specific guidance
 - **Supports Both Project Types** -- works with PackageReference and `packages.config` projects
+- **Parallel Scanning** -- analyses up to 5 projects concurrently with real-time progress ("Analysing 3 of 12: ProjectName...")
 - **Resizable & Sortable Columns** -- drag column borders to resize, click headers to sort ascending/descending
 - **Educational UI** -- a built-in Background tab explains what binding redirects are, why they break, and how this tool resolves them
 - **Theme-Aware** -- fully adapts to Light, Dark, Blue, and High Contrast themes
