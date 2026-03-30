@@ -11,11 +11,11 @@
     <VssdkCompatibleExtension>false</VssdkCompatibleExtension>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.2.0</Version>
+    <Version>0.2.1</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>
-    <Description>Automatically detects and repairs stale or missing assembly binding redirects in .NET Framework projects.</Description>
+    <Description>Automatically detects and repairs stale, missing, or orphaned assembly binding redirects in .NET Framework and .NET (Core) projects.</Description>
     <Copyright>Copyright (c) 2026 Ardimedia</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/ardimedia/binding-redirect-fixer</PackageProjectUrl>

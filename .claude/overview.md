@@ -1,6 +1,6 @@
 # Binding Redirect Fixer
 
-Automatically detects and repairs stale or missing assembly binding redirects in .NET Framework projects.
+Automatically detects and repairs stale, missing, or orphaned assembly binding redirects in .NET Framework and .NET (Core) projects.
 
 ## The Problem
 
@@ -12,26 +12,31 @@ Tracking down which redirects are wrong and what versions they should point to i
 
 ## Features
 
-- **Automatic Detection** -- scans all projects in your solution for stale, missing, or conflicting binding redirects
+- **Automatic Detection** -- scans all projects in your solution for stale, missing, orphaned, or conflicting binding redirects
 - **Multi-Source Version Resolution** -- cross-references four independent sources to pinpoint exactly where versions diverge:
   1. NuGet resolved DLL (authoritative)
   2. Package reference version (cross-check)
   3. Physical DLL in `bin/` (what is deployed)
   4. Config redirect (what the runtime uses)
-- **One-Click Fix** -- update stale redirects, add missing ones, or rebuild projects with conflicting bin/ output
+- **One-Click Fix** -- update stale redirects, add missing ones, remove orphaned entries, or rebuild projects with conflicting bin/ output
 - **Fix All** -- batch-fix all detected issues in a single click
+- **Deprecated Package Detection** -- flags packages like `Microsoft.Azure.Services.AppAuthentication` with migration guidance and offers removal with a warning
+- **Orphaned Redirect Detection** -- detects binding redirects with no DLL on disk, distinguishes .NET (Core) (safe to remove) from .NET Framework (verify GAC first)
+- **Framework Detection** -- reads target framework from `.csproj` to provide framework-specific guidance
 - **Supports Both Project Types** -- works with PackageReference and `packages.config` projects
-- **Educational UI** -- a built-in Learn tab explains what binding redirects are, why they break, and how this tool resolves them
+- **Resizable & Sortable Columns** -- drag column borders to resize, click headers to sort ascending/descending
+- **Educational UI** -- a built-in Background tab explains what binding redirects are, why they break, and how this tool resolves them
 - **Theme-Aware** -- fully adapts to Light, Dark, Blue, and High Contrast themes
 - **Non-Destructive** -- creates timestamped backups before modifying any config file
 
 ## Usage
 
-1. Open a solution containing .NET Framework projects
+1. Open a solution containing .NET Framework or .NET (Core) projects with `web.config` or `app.config`
 2. Go to **Tools** > **Binding Redirect Fixer**
 3. The tool window opens and automatically scans your solution
 4. Review the detected issues in the multi-source grid
-5. Click **Fix All** to resolve all issues, or fix them individually
+5. Filter by status (e.g. "Orphaned .NET (Core)") to focus on one group
+6. Click **Fix Shown Items** to resolve all visible issues, or fix them individually
 
 ## How It Works
 
@@ -50,14 +55,18 @@ The extension reads assembly versions from multiple sources and compares them:
 |---|---|---|
 | **STALE** | Config redirect points to an old assembly version | Updates `newVersion` |
 | **MISSING** | Redirect needed but does not exist | Adds `dependentAssembly` element |
-| **CONFLICT** | Config is correct but bin/ DLL is outdated | Triggers clean rebuild |
+| **CONFLICT** | Analysis error (corrupted DLL, inaccessible path) | Manual resolution |
 | **DUPLICATE** | Multiple redirects for the same assembly | Removes duplicate |
-| **MISMATCH** | Resolved and physical versions disagree | Flags for review |
+| **MISMATCH** | Redirect targets a version not on disk | Removes the redirect |
+| **TOKEN LOST** | DLL exists but is unsigned while config expects a public key token | Preserves token, updates version if needed |
+| **DEPRECATED** | Package replaced by a modern equivalent | Removes redirect (with warning) |
+| **ORPHANED .NET (Core)** | No DLL found in a .NET (Core) project | Removes redirect (safe) |
+| **ORPHANED .NET Framework** | No DLL found in a .NET Framework project | Removes redirect (verify GAC first) |
 
 ## Requirements
 
 - Visual Studio 2022 (17.14+) or Visual Studio 2026
-- .NET Framework projects with `web.config` or `app.config`
+- .NET Framework or .NET (Core) projects with `web.config` or `app.config`
 - NuGet packages restored
 
 ## Links

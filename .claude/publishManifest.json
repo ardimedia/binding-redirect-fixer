@@ -8,5 +8,5 @@
   "publisher": "Ardimedia",
   "pricing": "Free",
   "repo": "https://github.com/ardimedia/binding-redirect-fixer",
-  "tags": "binding-redirect, nuget, dotnet-framework, assembly, config, web.config, app.config, dependency, version-conflict"
+  "tags": "binding-redirect, nuget, dotnet-framework, dotnet, assembly, config, web.config, app.config, dependency, version-conflict, orphaned, deprecated"
 }

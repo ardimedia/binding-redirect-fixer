@@ -5,6 +5,14 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-03-30
+
+### Changed
+
+- Update project description and marketplace overview to mention .NET (Core) support
+- Update marketplace tags to include dotnet, orphaned, deprecated
+- Add `.claude/overview.md` to release sync checklist
+
 ## [0.2.0] - 2026-03-30
 
 ### Added
