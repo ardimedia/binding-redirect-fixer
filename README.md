@@ -1,6 +1,10 @@
 # Binding Redirect Fixer
 
+[![Build](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/actions/workflows/build.yml/badge.svg)](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/actions/workflows/build.yml)
+[![Release](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/actions/workflows/release.yml/badge.svg)](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/actions/workflows/release.yml)
 [![Visual Studio Marketplace](https://img.shields.io/visual-studio-marketplace/v/Ardimedia.BindingRedirectFixer.svg)](https://marketplace.visualstudio.com/items?itemName=Ardimedia.BindingRedirectFixer)
+[![Visual Studio Marketplace Downloads](https://img.shields.io/visual-studio-marketplace/d/Ardimedia.BindingRedirectFixer.svg)](https://marketplace.visualstudio.com/items?itemName=Ardimedia.BindingRedirectFixer)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 A Visual Studio 2026 extension that automatically detects and repairs stale, missing, or orphaned assembly binding redirects in .NET Framework and .NET (Core) projects.
 

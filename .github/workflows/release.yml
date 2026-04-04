@@ -63,5 +63,5 @@ jobs:
         uses: cezarypiatek/VsixPublisherAction@1.1
         with:
           extension-file: ${{ steps.vsix.outputs.path }}
-          publish-manifest-file: .claude/publishManifest.json
+          publish-manifest-file: .github/publishManifest.json
           personal-access-code: ${{ secrets.VS_MARKETPLACE_PAT }}
