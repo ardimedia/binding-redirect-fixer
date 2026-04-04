@@ -12,7 +12,7 @@
     <DeployExtension Condition="'$(Configuration)' == 'Debug' and '$(BuildingInsideVisualStudio)' == 'true'">true</DeployExtension>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.3.1</Version>
+    <Version>0.3.2</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>
