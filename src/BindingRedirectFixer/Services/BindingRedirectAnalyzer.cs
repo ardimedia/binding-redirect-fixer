@@ -91,6 +91,24 @@ public sealed class BindingRedirectAnalyzer
                 missingLookup.TryAdd(info.AssemblyName, info);
             }
 
+            // Step 6b: Detect project type for DLL-project redirect removal
+            bool isLibrary = DetectIsLibrary(projectDirectory);
+            bool isTestProject = DetectIsTestProject(projectDirectory);
+            bool hasAppConfigForCompiler = DetectHasAppConfigForCompiler(projectDirectory);
+
+            // Flag all redirects as unused if:
+            // - Modern .NET: binding redirects are always obsolete (regardless of project type)
+            // - .NET Framework library (not test, not exe, no compiler config): CLR never reads DLL config
+            bool flagAllAsUnused = false;
+            if (!isNetFramework)
+            {
+                flagAllAsUnused = existingRedirects.Count > 0;
+            }
+            else if (isLibrary && !isTestProject && !hasAppConfigForCompiler)
+            {
+                flagAllAsUnused = existingRedirects.Count > 0;
+            }
+
             // Step 7: Evaluate each assembly
             foreach (string assemblyName in allAssemblyNames.OrderBy(n => n, StringComparer.OrdinalIgnoreCase))
             {
@@ -133,6 +151,22 @@ public sealed class BindingRedirectAnalyzer
                     entry.ResolvedPackageVersion = missingInfo.PackageVersion;
                     entry.PublicKeyToken = missingInfo.PublicKeyToken;
                     entry.Culture = missingInfo.Culture;
+                }
+
+                // Step 7b: If all redirects are unused (DLL project or modern .NET), flag and skip decision tree
+                if (flagAllAsUnused && !string.IsNullOrEmpty(entry.CurrentRedirectVersion))
+                {
+                    entry.Status = RedirectStatus.UnusedInLibrary;
+                    entry.DiagnosticMessage = isNetFramework
+                        ? $"This is a class library (DLL) project. The CLR never reads binding redirects " +
+                          "from DLL config files \u2014 only from the host application (EXE/Web). " +
+                          "All binding redirects in this project can be safely removed."
+                        : "This is a modern .NET project. Binding redirects do not exist in .NET 5+ \u2014 " +
+                          "assembly resolution is handled by .deps.json and the runtime host. " +
+                          "All binding redirects can be safely removed.";
+                    entry.SuggestedAction = FixAction.RemoveAllRedirects;
+                    results.Add(entry);
+                    continue;
                 }
 
                 // Step 8: Apply decision tree
@@ -411,6 +445,131 @@ public sealed class BindingRedirectAnalyzer
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Detects whether the project produces a class library (DLL) output rather than an executable.
+    /// SDK-style projects default to Library when no OutputType is specified.
+    /// Web SDK projects (Microsoft.NET.Sdk.Web) are always considered executables.
+    /// </summary>
+    internal static bool DetectIsLibrary(string projectDirectory)
+    {
+        try
+        {
+            string[] csprojFiles = Directory.GetFiles(projectDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
+            if (csprojFiles.Length == 0)
+            {
+                return false;
+            }
+
+            string csprojContent = File.ReadAllText(csprojFiles[0]);
+            var doc = XDocument.Parse(csprojContent);
+            XNamespace ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+            // Web SDK projects are always host applications
+            string? sdkAttr = doc.Root?.Attribute("Sdk")?.Value;
+            if (sdkAttr is not null && sdkAttr.Contains("Microsoft.NET.Sdk.Web", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            // Check <OutputType> — Exe/WinExe means executable
+            string? outputType = doc.Descendants(ns + "OutputType").FirstOrDefault()?.Value;
+            if (!string.IsNullOrEmpty(outputType))
+            {
+                return !outputType.Equals("Exe", StringComparison.OrdinalIgnoreCase) &&
+                       !outputType.Equals("WinExe", StringComparison.OrdinalIgnoreCase);
+            }
+
+            // SDK-style projects default to Library when OutputType is absent
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Detects whether the project is a test project by checking for <c>IsTestProject</c> property
+    /// or well-known test framework package references (MSTest, xUnit, NUnit).
+    /// </summary>
+    internal static bool DetectIsTestProject(string projectDirectory)
+    {
+        try
+        {
+            string[] csprojFiles = Directory.GetFiles(projectDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
+            if (csprojFiles.Length == 0)
+            {
+                return false;
+            }
+
+            string csprojContent = File.ReadAllText(csprojFiles[0]);
+            var doc = XDocument.Parse(csprojContent);
+            XNamespace ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+            // Check <IsTestProject>true</IsTestProject>
+            string? isTestProject = doc.Descendants(ns + "IsTestProject").FirstOrDefault()?.Value;
+            if (string.Equals(isTestProject, "true", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            // Check for well-known test framework package references
+            string[] testPackages = ["MSTest", "MSTest.TestFramework", "Microsoft.NET.Test.Sdk",
+                "xunit", "xunit.core", "NUnit", "NUnit3TestAdapter"];
+
+            foreach (XElement packageRef in doc.Descendants(ns + "PackageReference"))
+            {
+                string? include = packageRef.Attribute("Include")?.Value;
+                if (include is not null && testPackages.Any(tp =>
+                    string.Equals(include, tp, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+            }
+
+            // Legacy: check for UnitTestFramework assembly reference
+            foreach (XElement reference in doc.Descendants(ns + "Reference"))
+            {
+                string? include = reference.Attribute("Include")?.Value;
+                if (include is not null && include.Contains("UnitTestFramework", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // Parse error — assume not a test project
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Detects whether the project uses <c>AppConfigForCompiler</c> or <c>UseAppConfigForCompiler</c>,
+    /// which are rare advanced scenarios where app.config influences the compiler's assembly resolution.
+    /// </summary>
+    internal static bool DetectHasAppConfigForCompiler(string projectDirectory)
+    {
+        try
+        {
+            string[] csprojFiles = Directory.GetFiles(projectDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
+            if (csprojFiles.Length == 0)
+            {
+                return false;
+            }
+
+            string csprojContent = File.ReadAllText(csprojFiles[0]);
+
+            return csprojContent.Contains("AppConfigForCompiler", StringComparison.OrdinalIgnoreCase) ||
+                   csprojContent.Contains("UseAppConfigForCompiler", StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>

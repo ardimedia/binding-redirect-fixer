@@ -67,7 +67,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
 
         Issues = [];
         Projects = ["All Projects"];
-        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Orphaned .NET (Core)", "Orphaned .NET Framework", "Deprecated", "OK"];
+        Statuses = ["All", "Issues Only", "Stale", "Missing", "Mismatch", "Duplicate", "Conflict", "Token Lost", "Orphaned .NET (Core)", "Orphaned .NET Framework", "Unused in Library", "Deprecated", "OK"];
 
         FixAllCommand = new AsyncCommand(ExecuteFixAllAsync);
         RefreshCommand = new AsyncCommand(ExecuteRefreshAsync);
@@ -185,8 +185,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                 RaiseNotifyPropertyChangedEvent(nameof(DeprecatedWarningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(OrphanedWarningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(OrphanedFrameworkWarningVisibility));
-                RaiseNotifyPropertyChangedEvent(nameof(OrphanedWarningVisibility));
-                RaiseNotifyPropertyChangedEvent(nameof(OrphanedFrameworkWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(UnusedInLibraryWarningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(FixChangeLogVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(ConfigSnippetVisibility));
             }
@@ -407,6 +406,12 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
     [DataMember]
     public string OrphanedFrameworkWarningVisibility =>
         _selectedIssue is not null && _selectedIssue.Status == RedirectStatus.OrphanedFramework
+            ? "Visible" : "Collapsed";
+
+    /// <summary>WPF Visibility for the UNUSED IN LIBRARY warning (DLL projects never use binding redirects).</summary>
+    [DataMember]
+    public string UnusedInLibraryWarningVisibility =>
+        _selectedIssue is not null && _selectedIssue.Status == RedirectStatus.UnusedInLibrary
             ? "Visible" : "Collapsed";
 
     private string _feedbackText = string.Empty;
@@ -841,11 +846,11 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
 
             // Only fix issues currently shown (respects all active filters)
             var shownFixable = Issues
-                .Where(vm => vm.SuggestedAction is FixAction.UpdateRedirect or FixAction.AddRedirect or FixAction.RemoveDuplicate or FixAction.RemoveRedirect)
+                .Where(vm => vm.SuggestedAction is FixAction.UpdateRedirect or FixAction.AddRedirect or FixAction.RemoveDuplicate or FixAction.RemoveRedirect or FixAction.RemoveAllRedirects)
                 .Select(vm => (vm.ProjectName, vm.Name))
                 .ToHashSet();
 
-            // Apply config patches (UpdateRedirect + AddRedirect)
+            // Apply config patches
             var issuesByProject = _allResults
                 .Where(r => shownFixable.Contains((r.ProjectName, r.Name)))
                 .GroupBy(r => r.ProjectName);
@@ -866,7 +871,34 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                 // Create one backup per project before patching
                 if (_createBackup) _configPatcher.CreateBackup(configPath);
 
-                foreach (var issue in group)
+                // Handle bulk RemoveAllRedirects first (per-project operation)
+                var bulkRemovalIssues = group.Where(r => r.SuggestedAction == FixAction.RemoveAllRedirects).ToList();
+                if (bulkRemovalIssues.Count > 0)
+                {
+                    bool bulkSuccess = _configPatcher.HasOnlyAssemblyBinding(configPath)
+                        ? _configPatcher.RemoveConfigFileAndCsprojReference(configPath, projectDir)
+                        : _configPatcher.RemoveAssemblyBindingSection(configPath);
+
+                    if (bulkSuccess)
+                    {
+                        foreach (var issue in bulkRemovalIssues)
+                        {
+                            fixedCount++;
+                            issue.CurrentRedirectVersion = null;
+                            issue.Status = RedirectStatus.OK;
+                            issue.DiagnosticMessage = string.Empty;
+                            issue.SuggestedAction = FixAction.None;
+
+                            var rowVm = Issues.FirstOrDefault(vm =>
+                                string.Equals(vm.Name, issue.Name, StringComparison.OrdinalIgnoreCase) &&
+                                string.Equals(vm.ProjectName, issue.ProjectName, StringComparison.OrdinalIgnoreCase));
+                            rowVm?.MarkAsFixed("\u2014");
+                        }
+                    }
+                }
+
+                // Handle individual fixes (skip already-handled bulk removals)
+                foreach (var issue in group.Where(r => r.SuggestedAction is not FixAction.RemoveAllRedirects and not FixAction.None))
                 {
                     string targetVersion = issue.EffectiveTargetVersion ?? string.Empty;
                     bool success = issue.SuggestedAction switch
@@ -1048,6 +1080,61 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
 
             if (_createBackup) _configPatcher.CreateBackup(configPath);
 
+            // Handle bulk removal for DLL/modern .NET projects
+            if (model.SuggestedAction == FixAction.RemoveAllRedirects)
+            {
+                bool fileDeleted = _configPatcher.HasOnlyAssemblyBinding(configPath);
+                bool bulkSuccess = fileDeleted
+                    ? _configPatcher.RemoveConfigFileAndCsprojReference(configPath, projectDir)
+                    : _configPatcher.RemoveAssemblyBindingSection(configPath);
+
+                if (bulkSuccess)
+                {
+                    // Mark ALL entries for this project with UnusedInLibrary as fixed
+                    var projectEntries = _allResults
+                        .Where(r => string.Equals(r.ProjectName, model.ProjectName, StringComparison.OrdinalIgnoreCase) &&
+                                    r.Status == RedirectStatus.UnusedInLibrary)
+                        .ToList();
+
+                    foreach (var entry in projectEntries)
+                    {
+                        entry.CurrentRedirectVersion = null;
+                        entry.Status = RedirectStatus.OK;
+                        entry.DiagnosticMessage = string.Empty;
+                        entry.SuggestedAction = FixAction.None;
+
+                        var rowVm = Issues.FirstOrDefault(vm =>
+                            string.Equals(vm.Name, entry.Name, StringComparison.OrdinalIgnoreCase) &&
+                            string.Equals(vm.ProjectName, entry.ProjectName, StringComparison.OrdinalIgnoreCase));
+                        rowVm?.MarkAsFixed("\u2014");
+                    }
+
+                    FixChangeLog = fileDeleted
+                        ? $"File: {configPath}\n"
+                            + $"Deleted config file \u2014 it contained only binding redirects.\n"
+                            + $"  {projectEntries.Count} redirect(s) removed."
+                        : $"File: {configPath}\n"
+                            + $"Removed entire <assemblyBinding> section.\n"
+                            + $"  {projectEntries.Count} redirect(s) removed. Other configuration preserved.";
+                    RaiseNotifyPropertyChangedEvent(nameof(FixChangeLogVisibility));
+
+                    LoadConfigSnippet();
+                    RaiseNotifyPropertyChangedEvent(nameof(ConfigSnippetVisibility));
+                    RaiseNotifyPropertyChangedEvent(nameof(DetailPanelVisibility));
+                    RaiseNotifyPropertyChangedEvent(nameof(ActionButtonVisibility));
+                    RaiseNotifyPropertyChangedEvent(nameof(UnusedInLibraryWarningVisibility));
+
+                    int issueCount = Issues.Count(i => i.Status != RedirectStatus.OK);
+                    StatusText = $"Removed all binding redirects from {model.ProjectName}. Showing {Issues.Count} result(s), {issueCount} issue(s).";
+                }
+                else
+                {
+                    StatusText = $"Could not apply fix for {SelectedIssue.Name}.";
+                }
+
+                return Task.CompletedTask;
+            }
+
             string targetVersion = model.EffectiveTargetVersion ?? string.Empty;
             bool isDeprecatedRemoval = model.Status == RedirectStatus.Deprecated
                 && model.SuggestedAction == FixAction.RemoveRedirect;
@@ -1132,6 +1219,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
                 RaiseNotifyPropertyChangedEvent(nameof(DeprecatedWarningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(OrphanedWarningVisibility));
                 RaiseNotifyPropertyChangedEvent(nameof(OrphanedFrameworkWarningVisibility));
+                RaiseNotifyPropertyChangedEvent(nameof(UnusedInLibraryWarningVisibility));
 
                 // Update status bar counts
                 int issueCount = Issues.Count(i => i.Status != RedirectStatus.OK);
@@ -1299,6 +1387,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
             "Token Lost" => filtered.Where(r => r.Status == RedirectStatus.TokenLost),
             "Orphaned .NET (Core)" => filtered.Where(r => r.Status == RedirectStatus.Orphaned),
             "Orphaned .NET Framework" => filtered.Where(r => r.Status == RedirectStatus.OrphanedFramework),
+            "Unused in Library" => filtered.Where(r => r.Status == RedirectStatus.UnusedInLibrary),
             "Deprecated" => filtered.Where(r => r.Status == RedirectStatus.Deprecated),
             "OK" => filtered.Where(r => r.Status == RedirectStatus.OK),
             _ => filtered // "All"
@@ -1405,6 +1494,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Deprecated => "DEPRECATED",
         RedirectStatus.Orphaned => "ORPHANED .NET (Core)",
         RedirectStatus.OrphanedFramework => "ORPHANED .NET Framework",
+        RedirectStatus.UnusedInLibrary => "UNUSED IN LIBRARY",
         RedirectStatus.OK => "OK",
         _ => ""
     }}";
@@ -1422,6 +1512,7 @@ public class AssemblyRedirectInfoViewModel : NotifyPropertyChangedObject
         RedirectStatus.Deprecated => "DEPRECATED",
         RedirectStatus.Orphaned => "ORPHANED .NET (Core)",
         RedirectStatus.OrphanedFramework => "ORPHANED .NET Framework",
+        RedirectStatus.UnusedInLibrary => "UNUSED IN LIBRARY",
         RedirectStatus.OK => "OK",
         _ => ""
     };

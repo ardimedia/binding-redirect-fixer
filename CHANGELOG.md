@@ -5,6 +5,25 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-04-04
+
+### Added
+
+- **UNUSED IN LIBRARY** status: detects binding redirects in class library (DLL) projects where the CLR never reads the config file (issue #4)
+- **Remove All Redirects** action: bulk-removes entire `<assemblyBinding>` section or deletes the config file if it contains only redirects
+- Project type detection: `DetectIsLibrary`, `DetectIsTestProject`, `DetectHasAppConfigForCompiler` methods
+- Modern .NET detection: flags all binding redirects as obsolete in .NET 5+ projects (regardless of project type)
+- ConfigPatcher methods: `HasOnlyAssemblyBinding`, `RemoveAssemblyBindingSection`, `RemoveConfigFileAndCsprojReference`
+- Blue info warning in detail panel explaining why DLL project redirects are unused
+- "UNUSED IN LIBRARY" card in Learn tab
+- 20 new unit tests for project type detection and config section operations (81 total)
+
+### Exceptions (not flagged)
+
+- .NET Framework test projects (test runner reads their config as host)
+- EXE and Web projects (they are host applications)
+- Projects using `AppConfigForCompiler` / `UseAppConfigForCompiler`
+
 ## [0.2.1] - 2026-03-30
 
 ### Added

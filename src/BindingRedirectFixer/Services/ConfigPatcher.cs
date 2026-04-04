@@ -451,6 +451,152 @@ public sealed class ConfigPatcher
     }
 
     /// <summary>
+    /// Checks whether the config file contains only assembly binding redirects and no other
+    /// meaningful configuration sections (appSettings, connectionStrings, custom sections, etc.).
+    /// </summary>
+    /// <param name="configPath">Full path to the config file.</param>
+    /// <returns><c>true</c> if the file contains only assemblyBinding; otherwise <c>false</c>.</returns>
+    public bool HasOnlyAssemblyBinding(string configPath)
+    {
+        if (!File.Exists(configPath))
+        {
+            return false;
+        }
+
+        XDocument doc;
+        try
+        {
+            doc = XDocument.Load(configPath);
+        }
+        catch
+        {
+            return false;
+        }
+
+        XElement? root = doc.Root;
+        if (root is null || !root.Name.LocalName.Equals("configuration", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        // Check that <configuration> has no significant child elements other than <runtime>
+        var rootChildren = root.Elements().ToList();
+        if (rootChildren.Count == 0)
+        {
+            return false;
+        }
+
+        if (rootChildren.Any(e => !e.Name.LocalName.Equals("runtime", StringComparison.OrdinalIgnoreCase)))
+        {
+            return false;
+        }
+
+        // Check that <runtime> has no child elements other than <assemblyBinding>
+        XElement runtime = rootChildren[0];
+        var runtimeChildren = runtime.Elements().ToList();
+        return runtimeChildren.Count > 0 &&
+               runtimeChildren.All(e => e.Name.LocalName.Equals("assemblyBinding", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Removes the entire <c>&lt;assemblyBinding&gt;</c> section from the config file.
+    /// If the <c>&lt;runtime&gt;</c> element becomes empty after removal, it is also removed.
+    /// </summary>
+    /// <param name="configPath">Full path to the config file.</param>
+    /// <returns><c>true</c> if the section was found and removed; otherwise <c>false</c>.</returns>
+    public bool RemoveAssemblyBindingSection(string configPath)
+    {
+        if (!File.Exists(configPath))
+        {
+            return false;
+        }
+
+        XDocument doc;
+        try
+        {
+            doc = XDocument.Load(configPath, LoadOptions.PreserveWhitespace);
+        }
+        catch
+        {
+            return false;
+        }
+
+        XElement? assemblyBinding = doc.Descendants(AssemblyBindingNs + "assemblyBinding").FirstOrDefault();
+        if (assemblyBinding is null)
+        {
+            return false;
+        }
+
+        XElement? runtime = assemblyBinding.Parent;
+        assemblyBinding.Remove();
+
+        // If <runtime> is now empty, remove it too
+        if (runtime is not null && !runtime.HasElements)
+        {
+            runtime.Remove();
+        }
+
+        doc.Save(configPath, SaveOptions.DisableFormatting);
+        return true;
+    }
+
+    /// <summary>
+    /// Deletes the config file and removes any reference to it from the .csproj file.
+    /// For legacy (non-SDK) projects, removes <c>&lt;None Include="App.config" /&gt;</c> or
+    /// <c>&lt;None Update="App.config" /&gt;</c> entries from the project file.
+    /// </summary>
+    /// <param name="configPath">Full path to the config file.</param>
+    /// <param name="projectDirectory">Full path to the project directory.</param>
+    /// <returns><c>true</c> if the file was deleted; otherwise <c>false</c>.</returns>
+    public bool RemoveConfigFileAndCsprojReference(string configPath, string projectDirectory)
+    {
+        if (!File.Exists(configPath))
+        {
+            return false;
+        }
+
+        string configFileName = Path.GetFileName(configPath);
+        File.Delete(configPath);
+
+        // Remove reference from .csproj if present
+        try
+        {
+            string[] csprojFiles = Directory.GetFiles(projectDirectory, "*.csproj", SearchOption.TopDirectoryOnly);
+            if (csprojFiles.Length > 0)
+            {
+                var doc = XDocument.Load(csprojFiles[0], LoadOptions.PreserveWhitespace);
+                XNamespace ns = doc.Root?.GetDefaultNamespace() ?? XNamespace.None;
+
+                var configRefs = doc.Descendants(ns + "None")
+                    .Where(e =>
+                    {
+                        string? include = e.Attribute("Include")?.Value;
+                        string? update = e.Attribute("Update")?.Value;
+                        return string.Equals(include, configFileName, StringComparison.OrdinalIgnoreCase) ||
+                               string.Equals(update, configFileName, StringComparison.OrdinalIgnoreCase);
+                    })
+                    .ToList();
+
+                if (configRefs.Count > 0)
+                {
+                    foreach (XElement configRef in configRefs)
+                    {
+                        configRef.Remove();
+                    }
+
+                    doc.Save(csprojFiles[0], SaveOptions.DisableFormatting);
+                }
+            }
+        }
+        catch
+        {
+            // Config file is already deleted; csproj cleanup is best-effort
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// Finds the dependentAssembly element matching the given assembly name.
     /// </summary>
     private static XElement? FindDependentAssembly(XDocument doc, string assemblyName)

@@ -28,6 +28,7 @@ Tracking down which redirects are wrong and what versions they should point to i
 - **Fix All** -- batch-fix all detected issues in a single click
 - **Deprecated Package Detection** -- flags packages like `Microsoft.Azure.Services.AppAuthentication` with migration guidance and offers removal with a warning
 - **Orphaned Redirect Detection** -- detects binding redirects with no DLL on disk, distinguishes .NET (Core) (safe to remove) from .NET Framework (verify GAC first)
+- **DLL Project Redirect Cleanup** -- detects class library projects where binding redirects have no effect (CLR only reads host app config) and offers bulk removal of the entire section or file
 - **Framework Detection** -- reads target framework from `.csproj` to provide framework-specific guidance
 - **Supports Both Project Types** -- works with PackageReference and `packages.config` projects
 - **Parallel Scanning** -- analyses up to 5 projects concurrently with real-time progress ("Analysing 3 of 12: ProjectName...")
@@ -82,6 +83,7 @@ The extension reads assembly versions from multiple sources and compares them:
 | **DEPRECATED** | Package is deprecated and should be replaced with a modern equivalent (e.g., `AppAuthentication` -> `Azure.Identity`) | Removes redirect (with warning to check NuGet refs) |
 | **ORPHANED .NET (Core)** | No DLL found in a .NET (Core) project -- redirect is orphaned | Removes the redirect (safe) |
 | **ORPHANED .NET Framework** | No DLL found in a .NET Framework project -- redirect is likely orphaned | Removes the redirect (verify GAC/post-build first) |
+| **UNUSED IN LIBRARY** | Binding redirect in a class library (DLL) project -- CLR never reads DLL config files | Removes all redirects (section or file deletion) |
 
 ### Package Version vs Assembly Version
 

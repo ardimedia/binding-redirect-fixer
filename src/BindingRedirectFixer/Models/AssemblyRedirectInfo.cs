@@ -35,7 +35,10 @@ public enum RedirectStatus
     Orphaned,
 
     /// <summary>No DLL found for this assembly in a .NET Framework project. The binding redirect is likely orphaned but GAC/post-build should be verified.</summary>
-    OrphanedFramework
+    OrphanedFramework,
+
+    /// <summary>Binding redirect in a class library (DLL) project. The CLR never reads binding redirects from DLL config files.</summary>
+    UnusedInLibrary
 }
 
 /// <summary>
@@ -59,7 +62,10 @@ public enum FixAction
     RemoveDuplicate,
 
     /// <summary>Remove the binding redirect entry because it targets a version not on disk.</summary>
-    RemoveRedirect
+    RemoveRedirect,
+
+    /// <summary>Remove all binding redirects from the config file (entire assemblyBinding section or file deletion).</summary>
+    RemoveAllRedirects
 }
 
 /// <summary>
@@ -169,6 +175,7 @@ public class AssemblyRedirectInfo
         RedirectStatus.Deprecated => "\u26D4",
         RedirectStatus.Orphaned => "\u26A0",
         RedirectStatus.OrphanedFramework => "\u26A0",
+        RedirectStatus.UnusedInLibrary => "\u2297",
         _ => ""
     };
 
@@ -181,6 +188,7 @@ public class AssemblyRedirectInfo
         FixAction.RebuildProject => "Rebuild Project",
         FixAction.RemoveDuplicate => "Remove Duplicate",
         FixAction.RemoveRedirect => "Remove Redirect",
+        FixAction.RemoveAllRedirects => "Remove All Redirects",
         _ => ""
     };
 
