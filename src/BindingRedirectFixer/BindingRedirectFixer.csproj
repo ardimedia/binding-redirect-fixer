@@ -9,9 +9,10 @@
     <!-- VSIX Extension properties -->
     <IsVisualStudioExtension>true</IsVisualStudioExtension>
     <VssdkCompatibleExtension>false</VssdkCompatibleExtension>
+    <DeployExtension Condition="'$(Configuration)' == 'Debug' and '$(BuildingInsideVisualStudio)' == 'true'">true</DeployExtension>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.3.0</Version>
+    <Version>0.3.1</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>

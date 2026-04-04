@@ -795,55 +795,62 @@
                       Visibility="{Binding FeedbackTabVisibility}">
             <StackPanel Margin="12,8,12,16">
 
-                <TextBlock Text="Feedback &amp; Issues"
-                           FontSize="18" FontWeight="Bold" Margin="0,0,0,10" />
-                <TextBlock TextWrapping="Wrap" FontSize="12.5" Margin="0,0,0,16" Opacity="0.85"
-                           Text="Found a bug? Have a suggestion or feature request? We'd love to hear from you." />
+                <TextBlock Text="Report an Issue or Suggest a Feature"
+                           FontWeight="Bold" Margin="0,0,0,6" />
 
-                <Border BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}" BorderThickness="1" CornerRadius="4" Margin="0,0,0,16" Padding="14,12" Background="Transparent">
+                <Border BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
+                        BorderThickness="1" CornerRadius="4" Padding="14,12" Margin="0,0,0,16" Background="Transparent">
                     <StackPanel>
-                        <TextBlock Text="Report an Issue or Suggestion" FontSize="14" FontWeight="Bold" Foreground="#5090E0" Margin="0,0,0,8" />
-                        <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,10" Opacity="0.85"
-                                   Text="Open an issue on GitHub to report bugs, request features, or ask questions about the extension." />
-                        <Button Command="{Binding OpenGitHubIssuesCommand}"
-                                Background="Transparent" BorderThickness="0"
-                                Padding="0" Margin="0" Cursor="Hand"
-                                HorizontalAlignment="Left">
-                            <TextBlock Text="https://github.com/ardimedia/binding-redirect-fixer/issues"
-                                       FontSize="12" FontFamily="Consolas"
-                                       Foreground="#5090E0"
-                                       TextDecorations="Underline" />
-                        </Button>
-                    </StackPanel>
-                </Border>
+                        <!-- Type selection -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
+                            <RadioButton Content="Bug Report" GroupName="FeedbackType" IsChecked="True"
+                                         Margin="0,0,16,0">
+                                <vs:ExtensibilityUICommands.EventHandlers>
+                                    <vs:EventHandlerCollection>
+                                        <vs:EventHandler Event="Checked"
+                                                         Command="{Binding SubmitFeedbackCommand}"
+                                                         CommandParameter="SetTypeBug" />
+                                    </vs:EventHandlerCollection>
+                                </vs:ExtensibilityUICommands.EventHandlers>
+                            </RadioButton>
+                            <RadioButton Content="Feature Request" GroupName="FeedbackType">
+                                <vs:ExtensibilityUICommands.EventHandlers>
+                                    <vs:EventHandlerCollection>
+                                        <vs:EventHandler Event="Checked"
+                                                         Command="{Binding SubmitFeedbackCommand}"
+                                                         CommandParameter="SetTypeFeature" />
+                                    </vs:EventHandlerCollection>
+                                </vs:ExtensibilityUICommands.EventHandlers>
+                            </RadioButton>
+                        </StackPanel>
 
-                <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,0,0,16" Opacity="0.6"
-                           Text="Click the link above to open GitHub Issues in your browser." />
+                        <!-- Title -->
+                        <TextBlock Text="Title" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding FeedbackTitle, Mode=TwoWay}"
+                                 Margin="0,0,0,10" Padding="4,3" />
 
-                <!-- Pre-filled issue details from Copy to Feedback button -->
-                <Border Visibility="{Binding FeedbackTextVisibility}"
-                        BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
-                        BorderThickness="1" CornerRadius="4" Margin="0,0,0,8" Padding="14,10" Background="Transparent">
-                    <StackPanel>
-                        <TextBlock Text="Issue Details (select all, copy, and paste into a new issue):"
-                                   FontSize="12" FontWeight="SemiBold" Margin="0,0,0,8" />
-                        <TextBox Text="{Binding FeedbackText}"
-                                 FontSize="11" FontFamily="Consolas"
-                                 TextWrapping="Wrap"
-                                 AcceptsReturn="True"
-                                 IsReadOnly="True"
+                        <!-- Description (pre-filled from Copy to Feedback or empty) -->
+                        <TextBlock Text="Description" FontWeight="SemiBold" Margin="0,0,0,4" />
+                        <TextBox Text="{Binding FeedbackText, Mode=TwoWay}"
+                                 AcceptsReturn="True" TextWrapping="Wrap"
+                                 MinHeight="100" MaxHeight="200"
                                  VerticalScrollBarVisibility="Auto"
-                                 MaxHeight="300"
-                                 Padding="8,6"
-                                 Background="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBackgroundBrushKey}}"
-                                 BorderThickness="0" />
+                                 Margin="0,0,0,12" Padding="4,3" />
+
+                        <!-- Submit button -->
+                        <Button Padding="12,5" HorizontalAlignment="Left"
+                                Command="{Binding SubmitFeedbackCommand}">
+                            <TextBlock Text="Open Browser for GitHub Issue" />
+                        </Button>
+
+                        <!-- Status message -->
+                        <TextBlock Text="{Binding FeedbackStatus, Mode=OneWay}"
+                                   FontSize="11" Margin="0,6,0,0" Opacity="0.6" />
                     </StackPanel>
                 </Border>
 
                 <!-- Extension Info -->
-                <Border Height="1" Opacity="0.15" Margin="0,0,0,16" Background="Gray" />
-
-                <TextBlock Text="Extension Info" FontSize="14" FontWeight="Bold" Margin="0,0,0,10" />
+                <TextBlock Text="Extension Info" FontWeight="Bold" Margin="0,0,0,6" />
                 <Border BorderBrush="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowBorderBrushKey}}"
                         BorderThickness="1" CornerRadius="4" Padding="14,10" Background="Transparent">
                     <StackPanel>

@@ -77,6 +77,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
         SwitchToFeedbackTabCommand = new AsyncCommand(ExecuteSwitchToFeedbackTabAsync);
         CopyToFeedbackCommand = new AsyncCommand(ExecuteCopyToFeedbackAsync);
         OpenGitHubIssuesCommand = new AsyncCommand(ExecuteOpenGitHubIssuesAsync);
+        SubmitFeedbackCommand = new AsyncCommand(ExecuteSubmitFeedbackAsync);
         FixSelectedCommand = new AsyncCommand(ExecuteFixSelectedAsync);
         FilterByProjectCommand = new AsyncCommand(ExecuteFilterByProjectAsync);
         FilterByStatusCommand = new AsyncCommand(ExecuteFilterByStatusAsync);
@@ -372,6 +373,30 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
     public string FeedbackTextVisibility =>
         string.IsNullOrEmpty(_feedbackText) ? "Collapsed" : "Visible";
 
+    [DataMember]
+    public string FeedbackTitle
+    {
+        get => _feedbackTitle;
+        set => SetProperty(ref _feedbackTitle, value);
+    }
+
+    [DataMember]
+    public string FeedbackType
+    {
+        get => _feedbackType;
+        set => SetProperty(ref _feedbackType, value);
+    }
+
+    [DataMember]
+    public string FeedbackStatus
+    {
+        get => _feedbackStatus;
+        set => SetProperty(ref _feedbackStatus, value);
+    }
+
+    [DataMember]
+    public IAsyncCommand SubmitFeedbackCommand { get; }
+
     /// <summary>WPF Visibility for the info bar.</summary>
     [DataMember]
     public string InfoBarVisibility => _showInfoBar ? "Visible" : "Collapsed";
@@ -415,6 +440,9 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
             ? "Visible" : "Collapsed";
 
     private string _feedbackText = string.Empty;
+    private string _feedbackTitle = "BUG: ";
+    private string _feedbackType = "Bug";
+    private string _feedbackStatus = string.Empty;
     private string _fixChangeLog = string.Empty;
 
     /// <summary>Description of the last fix applied (file path and what changed).</summary>
@@ -1046,6 +1074,45 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
             FileName = "https://github.com/ardimedia/binding-redirect-fixer/issues",
             UseShellExecute = true
         });
+        return Task.CompletedTask;
+    }
+
+    private Task ExecuteSubmitFeedbackAsync(object? parameter, CancellationToken cancellationToken)
+    {
+        if (parameter is "SetTypeBug" or "SetTypeFeature")
+        {
+            var oldPrefix = FeedbackType == "Bug" ? "BUG: " : "FEATURE: ";
+            var newType = parameter is "SetTypeBug" ? "Bug" : "Feature";
+            var newPrefix = newType == "Bug" ? "BUG: " : "FEATURE: ";
+            FeedbackType = newType;
+
+            if (FeedbackTitle.StartsWith(oldPrefix, StringComparison.Ordinal))
+                FeedbackTitle = newPrefix + FeedbackTitle[oldPrefix.Length..];
+            else if (!FeedbackTitle.StartsWith(newPrefix, StringComparison.Ordinal))
+                FeedbackTitle = newPrefix + FeedbackTitle;
+
+            return Task.CompletedTask;
+        }
+
+        if (string.IsNullOrWhiteSpace(FeedbackTitle) || FeedbackTitle.Trim() is "BUG:" or "FEATURE:")
+        {
+            FeedbackStatus = "Please enter a title.";
+            return Task.CompletedTask;
+        }
+
+        var label = FeedbackType == "Bug" ? "bug" : "enhancement";
+        var title = Uri.EscapeDataString(FeedbackTitle.Trim());
+        var body = Uri.EscapeDataString(
+            (string.IsNullOrEmpty(FeedbackText) ? "" : FeedbackText + "\n\n")
+            + $"**Extension Info**: Version: {ExtensionVersion}");
+        var url = $"https://github.com/ardimedia/binding-redirect-fixer/issues/new?title={title}&body={body}&labels={label}";
+
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+
+        FeedbackStatus = "Opened in browser.";
+        var prefix = FeedbackType == "Bug" ? "BUG: " : "FEATURE: ";
+        FeedbackTitle = prefix;
+        FeedbackText = string.Empty;
         return Task.CompletedTask;
     }
 
