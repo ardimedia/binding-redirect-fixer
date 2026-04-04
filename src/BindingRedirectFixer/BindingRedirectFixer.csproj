@@ -12,7 +12,7 @@
     <DeployExtension Condition="'$(Configuration)' == 'Debug' and '$(BuildingInsideVisualStudio)' == 'true'">true</DeployExtension>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.3.2</Version>
+    <Version>0.3.3</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>
@@ -31,7 +31,7 @@
     <PackageReference Include="Microsoft.VisualStudio.Extensibility.Build" Version="17.14.*" />
     <PackageReference Include="NuGet.ProjectModel" Version="7.3.0" />
     <PackageReference Include="System.Reflection.MetadataLoadContext" Version="10.0.5" />
-    <PackageReference Include="Ardimedia.VsExtensions.Common" Version="1.0.*" />
+    <PackageReference Include="Ardimedia.VsExtensions.Common" Version="1.1.0" />
   </ItemGroup>
 
   <ItemGroup>
