@@ -342,6 +342,7 @@
                           VirtualizingStackPanel.VirtualizationMode="Recycling"
                           ScrollViewer.HorizontalScrollBarVisibility="Auto"
                           Background="Transparent"
+                          Foreground="{DynamicResource {x:Static platformui:EnvironmentColors.ToolWindowTextBrushKey}}"
                           BorderThickness="0"
                           FontSize="11">
                     <ListView.View>
