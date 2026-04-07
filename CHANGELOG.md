@@ -5,11 +5,11 @@ All notable changes to the Binding Redirect Fixer extension will be documented i
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.3.9] - 2026-04-07
+## [0.3.10] - 2026-04-07
 
 ### Fixed
 
-- **Dark theme readability**: ListView text and column headers now use VS theme colors — readable in Dark, Blue, and High Contrast themes
+- **Dark theme readability**: ListView text, column headers, and selected item now use VS theme colors — readable in Dark, Blue, and High Contrast themes
 
 ## [0.3.4] - 2026-04-06
 

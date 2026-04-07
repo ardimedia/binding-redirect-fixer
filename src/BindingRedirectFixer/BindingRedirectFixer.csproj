@@ -7,7 +7,7 @@
     <RootNamespace>BindingRedirectFixer</RootNamespace>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.3.9</Version>
+    <Version>0.3.10</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>
