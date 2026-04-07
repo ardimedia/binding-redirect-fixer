@@ -48,7 +48,7 @@ Tracking down which redirects are wrong and what versions they should point to i
 
 ### From VSIX File
 
-1. Download the `.vsix` file from [Releases](https://github.com/ardimedia/binding-redirect-fixer/releases)
+1. Download the `.vsix` file from [Releases](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/releases)
 2. Double-click the file to install, or use **Extensions** > **Manage Extensions** > **Install from File**
 
 ## Usage

@@ -72,7 +72,7 @@ This triggers the GitHub Actions workflow (`.github/workflows/release.yml`) whic
 ## 8. Verify
 
 After pushing, tell the user to check the workflow run at:
-`https://github.com/ardimedia/binding-redirect-fixer/actions`
+`https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/actions`
 
 ## Notes
 

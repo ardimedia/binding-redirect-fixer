@@ -56,7 +56,7 @@ For CLI publishing, create a `publishManifest.json` in the repo root:
   "overview": "README.md",
   "pricing": "Free",
   "publisher": "Ardimedia",
-  "repo": "https://github.com/ardimedia/binding-redirect-fixer"
+  "repo": "https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer"
 }
 ```
 

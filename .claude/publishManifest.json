@@ -7,6 +7,6 @@
   "categories": [ "coding", "build" ],
   "publisher": "Ardimedia",
   "pricing": "Free",
-  "repo": "https://github.com/ardimedia/binding-redirect-fixer",
+  "repo": "https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer",
   "tags": "binding-redirect, nuget, dotnet-framework, dotnet, assembly, config, web.config, app.config, dependency, version-conflict, orphaned, deprecated"
 }

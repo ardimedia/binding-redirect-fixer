@@ -1071,7 +1071,7 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
     {
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
         {
-            FileName = "https://github.com/ardimedia/binding-redirect-fixer/issues",
+            FileName = "https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/issues",
             UseShellExecute = true
         });
         return Task.CompletedTask;
@@ -1104,8 +1104,8 @@ public class BindingRedirectToolWindowViewModel : ToolWindowViewModelBase
         var title = Uri.EscapeDataString(FeedbackTitle.Trim());
         var body = Uri.EscapeDataString(
             (string.IsNullOrEmpty(FeedbackText) ? "" : FeedbackText + "\n\n")
-            + $"**Extension Info**: Version: {ExtensionVersion}");
-        var url = $"https://github.com/ardimedia/binding-redirect-fixer/issues/new?title={title}&body={body}&labels={label}";
+            + $"**Extension Info**: Binding Redirect Fixer, Version: {ExtensionVersion}");
+        var url = $"https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/issues/new?title={title}&body={body}&labels={label}";
 
         System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
 

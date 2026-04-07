@@ -74,6 +74,6 @@ The extension reads assembly versions from multiple sources and compares them:
 
 ## Links
 
-- [Source Code](https://github.com/ardimedia/binding-redirect-fixer)
-- [Report Issues](https://github.com/ardimedia/binding-redirect-fixer/issues)
-- [License (MIT)](https://github.com/ardimedia/binding-redirect-fixer/blob/main/LICENSE)
+- [Source Code](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer)
+- [Report Issues](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/issues)
+- [License (MIT)](https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer/blob/main/LICENSE)

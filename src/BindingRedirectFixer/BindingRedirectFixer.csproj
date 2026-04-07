@@ -7,15 +7,15 @@
     <RootNamespace>BindingRedirectFixer</RootNamespace>
 
     <!-- Package / Marketplace metadata -->
-    <Version>0.3.5</Version>
+    <Version>0.3.7</Version>
     <Authors>Ardimedia</Authors>
     <Company>Ardimedia</Company>
     <Product>Binding Redirect Fixer</Product>
     <Description>Automatically detects and repairs stale, missing, or orphaned assembly binding redirects in .NET Framework and .NET (Core) projects.</Description>
     <Copyright>Copyright (c) 2026 Ardimedia</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/ardimedia/binding-redirect-fixer</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/ardimedia/binding-redirect-fixer</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ardimedia-com/visualstudio-binding-redirect-fixer</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>visual-studio;vsix;binding-redirect;nuget;dotnet-framework</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
